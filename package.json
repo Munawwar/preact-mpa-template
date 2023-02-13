@@ -1,0 +1,57 @@
+{
+  "name": "preact-mpa",
+  "version": "0.0.1",
+  "description": "Preact MPA starter template",
+  "type": "module",
+  "module": "server/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm:watch:server\" \"npm:watch:assets\"",
+    "watch:server": "nodemon --watch server/ server/server.js",
+    "watch:assets": "nodemon --watch client/ --watch build.js -e js,jsx,svg,png,jpg -x \"node build.js\"",
+    "build": "node build.js --minify",
+    "lint": "eslint server/",
+    "lint:fix": "eslint --fix server/"
+  },
+  "keywords": [
+    "preact",
+    "MPA"
+  ],
+  "author": "Munawwar",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-async-handler": "^1.2.0",
+    "htm": "^3.1.1",
+    "preact": "^10.11.3",
+    "preact-render-to-string": "^5.2.6",
+    "sirv": "^2.0.2"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0",
+    "esbuild": "^0.17.8",
+    "eslint": "^8.32.0",
+    "eslint-config-semistandard": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.6.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "livereload": "^0.9.3",
+    "nodemon": "^2.0.20",
+    "rimraf": "^4.1.2",
+    "tiny-glob": "^0.2.9"
+  },
+  "eslintConfig": {
+    "ignorePatterns": "dist/",
+    "env": {
+      "browser": true,
+      "node": true,
+      "es2021": true
+    },
+    "extends": "semistandard",
+    "overrides": [],
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "module"
+    },
+    "rules": {}
+  }
+}
