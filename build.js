@@ -1,7 +1,8 @@
-import * as esbuild from 'esbuild';
+import { build } from 'esbuild';
 import glob from 'tiny-glob';
 import { parseArgs } from 'node:util';
 import rimraf from 'rimraf';
+import manifestPlugin from 'esbuild-plugin-manifest';
 
 const {
   values: {
@@ -16,46 +17,32 @@ const {
   }
 });
 
-const cleanPromise = rimraf('dist/');
-
-const clientEntryPointsPromise = prod ? glob('./client/pages/**/*.{js,jsx}') : null;
-const [
-  clientEntryPoints,
-  serverEntryPoints
-] = await Promise.all([
-  clientEntryPointsPromise,
-  glob('./client/**/*.{js,jsx}'),
-  cleanPromise
+let [entryPoints] = await Promise.all([
+  glob('./client/pages/**/*.page.jsx'),
+  // clean current dist/
+  rimraf('dist/')
 ]);
+entryPoints = ['./client/renderToString.jsx'].concat(entryPoints);
+// console.log('entryPoints', entryPoints);
 
-const commonConfig = {
+await build({
+  entryPoints,
+  outdir: 'dist/',
+  outbase: 'client/',
   format: 'esm',
+  bundle: true,
+  sourcemap: true,
+  splitting: true,
+  minify: true,
+  plugins: prod ? [manifestPlugin()] : [],
+  loader: {
+    '.svg': 'file',
+    '.png': 'file',
+    '.jpg': 'file',
+    '.jpeg': 'file',
+    '.webp': 'file'
+  },
+  resolveExtensions: ['.jsx', '.ts', '.tsx'],
   jsxImportSource: 'preact',
-  jsx: 'automatic',
-  jsxFactory: 'h',
-  jsxFragment: 'Fragment',
-  resolveExtensions: ['.jsx', '.ts', '.tsx']
-};
-
-console.log('serverEntryPoints', serverEntryPoints);
-await Promise.all([
-  // Client build
-  prod
-    ? esbuild.build({
-      entryPoints: clientEntryPoints,
-      outdir: 'dist/client/',
-      outbase: 'client/',
-      ...commonConfig,
-      bundle: true,
-      minify: true
-    })
-    : null,
-  // Server build
-  esbuild.build({
-    entryPoints: serverEntryPoints,
-    outdir: 'dist/server/',
-    outbase: 'client/',
-    ...commonConfig,
-    platform: 'node'
-  })
-]);
+  jsx: 'automatic'
+})
