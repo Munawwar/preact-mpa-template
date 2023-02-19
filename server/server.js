@@ -2,7 +2,7 @@ import express from 'express';
 import sirvMiddleware from 'sirv';
 import asyncHandler from 'express-async-handler';
 import routes from './routes/routes.js';
-import { staticDirectory } from './paths.js';
+import { publicURLPath, staticDirectory } from './paths.js';
 
 const port = process.env.PORT || 5132;
 
@@ -13,9 +13,9 @@ const app = express();
 // Use sirv on prod as is caches files read
 // On dev use express.static as we don't want strong caching
 if (isProduction) {
-  app.use(sirvMiddleware(staticDirectory));
+  app.use(publicURLPath, sirvMiddleware(staticDirectory));
 } else {
-  app.use(express.static(staticDirectory));
+  app.use(publicURLPath, express.static(staticDirectory));
 }
 
 // Declare routes
@@ -50,6 +50,7 @@ await Promise.all(routes.map(async ({
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error(err);
+  res.status(500).send('Unexpected error');
 });
 
 app.listen(port);

@@ -3,64 +3,62 @@ import fs from 'node:fs';
 import {
   __dirname,
   root,
-  staticDirectory
+  staticDirectory,
+  publicURLPath,
+  ssrDirectory
 } from './paths.js';
 import shallowImportAnalyzer from './shallowImportAnalyzer.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-function getRelativePathToDist(distPath) {
-  return path.relative(__dirname, path.resolve(root, distPath));
+function getPaths(pageName) {
+  return {
+    source: {
+      jsFile: `client/pages/${pageName}/${pageName}.page.jsx`,
+      cssFile: `client/pages/${pageName}/${pageName}.page.css`
+    },
+    ssr: {
+      jsFile: `${ssrDirectory}/pages/${pageName}/${pageName}.page.js`
+    }
+  };
 }
 
-function mapSrcToDevDist(srcPath) {
-  return srcPath
-    .replace(/^client\//, 'dist/')
-    .replace(/\.jsx$/, '.js');
+function getRelativePathToSSRDist(distSSRPath) {
+  return path.relative(__dirname, path.resolve(root, distSSRPath));
 }
 
 let manifest;
 async function getPage(pageName, hostname) {
-  let jsFile = `client/pages/${pageName}/${pageName}.page.jsx`;
-  let cssFile = `client/pages/${pageName}/${pageName}.page.css`;
-  let preactRenderToStringFile = 'client/renderToString.jsx';
-  let liveReloadScript;
-  if (isProduction) {
-    // Map from server manifest
-    // Cache manifest if not cached
-    if (!manifest) {
-      manifest = JSON.parse(
-        await fs.promises.readFile(
-          path.resolve(root, `dist/manifest.json`),
-          'utf-8'
-        )
-      );
-    }
-    jsFile = manifest[jsFile];
-    cssFile = manifest[cssFile];
-    preactRenderToStringFile = manifest[preactRenderToStringFile];
-  } else {
-    jsFile = mapSrcToDevDist(jsFile);
-    cssFile = mapSrcToDevDist(cssFile);
-    preactRenderToStringFile = mapSrcToDevDist(preactRenderToStringFile);
-    liveReloadScript = `http://${hostname.split(':')[0]}:35729/livereload.js?snipver=1`;
+  const filePaths = getPaths(pageName);
+  // Map from server manifest
+  // Cache manifest if not cached
+  if (!manifest) {
+    manifest = JSON.parse(
+      await fs.promises.readFile(
+        path.resolve(staticDirectory, `manifest.json`),
+        'utf-8'
+      )
+    );
   }
+
+  const jsFile = manifest[filePaths.source.jsFile];
+  const cssFile = manifest[filePaths.source.cssFile];
+  const liveReloadScript = isProduction
+    ? undefined
+    : `http://${hostname.split(':')[0]}:35729/livereload.js?snipver=1`;
 
   const [
     exports,
-    preloadJs,
-    preactRenderToStringExports
+    preloadJs
   ] = await Promise.all([
-    import(getRelativePathToDist(jsFile)),
-    shallowImportAnalyzer(jsFile),
-    import(getRelativePathToDist( preactRenderToStringFile))
+    import(getRelativePathToSSRDist(filePaths.ssr.jsFile)),
+    shallowImportAnalyzer(jsFile)
   ]);
   return {
-    js: `/${path.relative(staticDirectory, jsFile)}`,
+    js: `${publicURLPath}/${path.relative(staticDirectory, jsFile)}`,
     preloadJs,
-    css: `/${path.relative(staticDirectory, cssFile)}`,
+    css: `${publicURLPath}/${path.relative(staticDirectory, cssFile)}`,
     exports,
-    preactRenderToStringExports,
     liveReloadScript
   };
 }

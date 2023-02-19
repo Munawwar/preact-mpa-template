@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { publicURLPath } from './paths.js';
 
 const cache = {};
 /**
@@ -16,7 +17,7 @@ async function shallowImportAnalyzer(distPageFilePath) {
     const imports = [];
     let matches;
     while ((matches = regex.exec(source))) {
-      imports.push(`/${matches[1].split('/').pop()}`);
+      imports.push(`${publicURLPath}/${matches[1].split('/').pop()}`);
     }
     cache[distPageFilePath] = imports;
   }

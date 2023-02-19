@@ -1,3 +1,4 @@
+import { renderToString } from "preact-render-to-string";
 import getPage from "../../getPage.js";
 
 /**
@@ -10,9 +11,6 @@ export default async (req, res) => {
     preloadJs,
     css,
     exports: { pageToHtml },
-    preactRenderToStringExports: {
-      renderToString
-    },
     liveReloadScript
   } = await getPage('about', req.hostname);
 

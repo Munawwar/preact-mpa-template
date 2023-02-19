@@ -1,40 +1,23 @@
 import { build } from 'esbuild';
 import glob from 'tiny-glob';
-import { parseArgs } from 'node:util';
 import rimraf from 'rimraf';
 import manifestPlugin from 'esbuild-plugin-manifest';
+import { publicURLPath } from './server/paths.js';
 
-const {
-  values: {
-    prod
-  }
-} = parseArgs({
-  values: process.argv,
-  options: {
-    prod: {
-      type: 'boolean'
-    }
-  }
-});
-
-let [entryPoints] = await Promise.all([
+const [entryPoints] = await Promise.all([
   glob('./client/pages/**/*.page.jsx'),
   // clean current dist/
   rimraf('dist/')
 ]);
-entryPoints = ['./client/renderToString.jsx'].concat(entryPoints);
 // console.log('entryPoints', entryPoints);
 
-await build({
+const commonConfig = {
   entryPoints,
-  outdir: 'dist/',
   outbase: 'client/',
+  publicPath: publicURLPath,
   format: 'esm',
   bundle: true,
   sourcemap: true,
-  splitting: true,
-  minify: true,
-  plugins: prod ? [manifestPlugin()] : [],
   loader: {
     '.svg': 'file',
     '.png': 'file',
@@ -45,4 +28,21 @@ await build({
   resolveExtensions: ['.jsx', '.ts', '.tsx'],
   jsxImportSource: 'preact',
   jsx: 'automatic'
-});
+};
+
+await Promise.all([
+  build({
+    outdir: 'dist/public/',
+    splitting: true,
+    minify: true,
+    plugins: [manifestPlugin()],
+    ...commonConfig
+  }),
+  build({
+    outdir: 'dist/ssr/',
+    splitting: false,
+    minify: false,
+    external: ['preact', 'preact-render-to-string'],
+    ...commonConfig
+  })
+]);
