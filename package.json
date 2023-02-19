@@ -1,7 +1,7 @@
 {
-  "name": "preact-mpa",
+  "name": "preact-mpa-starter-template",
   "version": "0.0.1",
-  "description": "Preact MPA starter template",
+  "description": "Preact multi-page app/website starter template",
   "type": "module",
   "module": "server/server.js",
   "scripts": {
