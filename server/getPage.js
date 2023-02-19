@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import {
   __dirname,
   root,
-  staticDirectory,
+  publicDirectory,
   publicURLPath,
   ssrDirectory
 } from './paths.js';
@@ -35,7 +35,7 @@ async function getPage(pageName, hostname) {
   if (!manifest) {
     manifest = JSON.parse(
       await fs.promises.readFile(
-        path.resolve(staticDirectory, `manifest.json`),
+        path.resolve(publicDirectory, `manifest.json`),
         'utf-8'
       )
     );
@@ -55,9 +55,9 @@ async function getPage(pageName, hostname) {
     shallowImportAnalyzer(jsFile)
   ]);
   return {
-    js: `${publicURLPath}/${path.relative(staticDirectory, jsFile)}`,
+    js: `${publicURLPath}/${path.relative(publicDirectory, jsFile)}`,
     preloadJs,
-    css: `${publicURLPath}/${path.relative(staticDirectory, cssFile)}`,
+    css: `${publicURLPath}/${path.relative(publicDirectory, cssFile)}`,
     exports,
     liveReloadScript
   };

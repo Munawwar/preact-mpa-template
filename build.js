@@ -3,7 +3,7 @@ import glob from 'tiny-glob';
 import rimraf from 'rimraf';
 import manifestPlugin from 'esbuild-plugin-manifest';
 import {
-  staticDirectoryRelative,
+  publicDirectoryRelative,
   ssrDirectoryRelative,
   publicURLPath
 } from './server/paths.js';
@@ -36,7 +36,7 @@ const commonConfig = {
 
 await Promise.all([
   build({
-    outdir: staticDirectoryRelative,
+    outdir: publicDirectoryRelative,
     splitting: true,
     minify: true,
     plugins: [manifestPlugin()],

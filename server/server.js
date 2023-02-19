@@ -2,7 +2,7 @@ import express from 'express';
 import sirvMiddleware from 'sirv';
 import asyncHandler from 'express-async-handler';
 import routes from './routes/routes.js';
-import { publicURLPath, staticDirectory } from './paths.js';
+import { publicURLPath, publicDirectory } from './paths.js';
 
 const port = process.env.PORT || 5132;
 
@@ -13,9 +13,9 @@ const app = express();
 // Use sirv on prod as is caches files read
 // On dev use express.static as we don't want strong caching
 if (isProduction) {
-  app.use(publicURLPath, sirvMiddleware(staticDirectory));
+  app.use(publicURLPath, sirvMiddleware(publicDirectory));
 } else {
-  app.use(publicURLPath, express.static(staticDirectory));
+  app.use(publicURLPath, express.static(publicDirectory));
 }
 
 // Declare routes
@@ -61,5 +61,5 @@ if (!isProduction) {
   const lrserver = livereload.createServer({
     delay: 50
   });
-  lrserver.watch(staticDirectory);
+  lrserver.watch(publicDirectory);
 }

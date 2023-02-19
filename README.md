@@ -27,4 +27,4 @@ Entry files to a page should placed in `client/pages/{name}/{name}.page.jsx`.
 You will have to do at least a couple of things to production-ize this template:
 1. You may not want to have a single preact context for the entire website. Each page having a separate context might be better.
 2. Add [HTTP/2](https://www.npmjs.com/package/http2-express-bridge) support.
-3. Upload files from `dist/public` directory to a file storage origin (like AWS S3) and use a CDN to intercept everything under URL path `/static/*` (on the same domain as the express server) to point to the file storage origin. Enable dynamic compression on the CDN.
+3. Upload files from `dist/public` directory to a file storage origin (like AWS S3) and use a CDN to intercept everything under URL path `/public/*` (on the same domain as the express server) to point to the file storage origin. Enable dynamic compression on the CDN.
