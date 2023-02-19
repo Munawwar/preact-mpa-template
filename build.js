@@ -2,7 +2,11 @@ import { build } from 'esbuild';
 import glob from 'tiny-glob';
 import rimraf from 'rimraf';
 import manifestPlugin from 'esbuild-plugin-manifest';
-import { publicURLPath } from './server/paths.js';
+import {
+  staticDirectoryRelative,
+  ssrDirectoryRelative,
+  publicURLPath
+} from './server/paths.js';
 
 const [entryPoints] = await Promise.all([
   glob('./client/pages/**/*.page.jsx'),
@@ -32,14 +36,14 @@ const commonConfig = {
 
 await Promise.all([
   build({
-    outdir: 'dist/public/',
+    outdir: staticDirectoryRelative,
     splitting: true,
     minify: true,
     plugins: [manifestPlugin()],
     ...commonConfig
   }),
   build({
-    outdir: 'dist/ssr/',
+    outdir: ssrDirectoryRelative,
     splitting: false,
     minify: false,
     external: ['preact', 'preact-render-to-string'],
