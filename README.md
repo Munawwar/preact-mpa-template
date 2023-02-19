@@ -1,6 +1,6 @@
-# preact-esbuild-ssr
+# preact-mpa-starter-template
 
-Example repo to start a multi-page website with Preact and esbuild.
+Example repo to start a multi-page app/website (MPA) with Preact and esbuild.
 
 - 🐢 JS, CSS, image files are content hashed ("fingerprinted") on prod for long lived caching
 - 💽 Express JS server
