@@ -45,4 +45,4 @@ await build({
   resolveExtensions: ['.jsx', '.ts', '.tsx'],
   jsxImportSource: 'preact',
   jsx: 'automatic'
-})
+});

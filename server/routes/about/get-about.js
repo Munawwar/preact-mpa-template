@@ -7,6 +7,7 @@ import getPage from "../../getPage.js";
 export default async (req, res) => {
   const {
     js,
+    preloadJs,
     css,
     exports: { pageToHtml },
     preactRenderToStringExports: {
@@ -23,6 +24,7 @@ export default async (req, res) => {
       <head>
         <link rel="stylesheet" href="${css}">
         <script>window.pageContext=${JSON.stringify(pageContext)};</script>
+        ${preloadJs.map((js) => /* html */`<link rel="modulepreload" href="${js}">`).join('\n')}
         <script type="module" src="${js}"></script>
         ${liveReloadScript ? /* html */`<script src="${liveReloadScript}"></script>` : ''}
       </head>
@@ -32,5 +34,5 @@ export default async (req, res) => {
     </html>
   `;
 
-  res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+  res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
 };

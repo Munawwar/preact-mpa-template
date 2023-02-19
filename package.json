@@ -65,7 +65,9 @@
         "jsx": true
       }
     },
-    "rules": {},
+    "rules": {
+      "semi": "error"
+    },
     "settings": {
       "jest": {
         "// jest is dummy config only needed for preact eslint plugin": true,

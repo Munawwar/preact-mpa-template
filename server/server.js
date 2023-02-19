@@ -1,21 +1,21 @@
-import express from 'express'
-import sirvMiddleware from 'sirv'
+import express from 'express';
+import sirvMiddleware from 'sirv';
 import asyncHandler from 'express-async-handler';
 import routes from './routes/routes.js';
-import { staticDirectory } from './paths.js'
+import { staticDirectory } from './paths.js';
 
 const port = process.env.PORT || 5132;
 
-const isProduction = process.env.NODE_ENV === 'production'
+const isProduction = process.env.NODE_ENV === 'production';
 
 const app = express();
 
 // Use sirv on prod as is caches files read
 // On dev use express.static as we don't want strong caching
 if (isProduction) {
-  app.use(sirvMiddleware(staticDirectory))
+  app.use(sirvMiddleware(staticDirectory));
 } else {
-  app.use(express.static(staticDirectory))
+  app.use(express.static(staticDirectory));
 }
 
 // Declare routes
@@ -25,15 +25,14 @@ await Promise.all(routes.map(async ({
   middlewares = [],
   handler
 }) => {
-  // On development, try to resolve file path immediately to find any immediate issues
-  const preloadedHandler = isProduction ? null : (await import(`./routes/${handler}`)).default;
   app[method.toLowerCase()](
     pattern,
     ...middlewares,
     asyncHandler(async (req, res, next) => {
-      let routeHandler = preloadedHandler;
+      let routeHandler;
       try {
-        // On production, lazy-load the routes so that node.js doesn't incur a heavy start-up cost
+        // Lazy-load the routes so that node.js doesn't incur a heavy start-up
+        // cost both on production and dev (speeds up nodemon reload).
         if (!routeHandler) {
           routeHandler = (await import(`./routes/${handler}`)).default;
         }
@@ -41,11 +40,17 @@ await Promise.all(routes.map(async ({
         console.error('Could not find handler file:', handler);
         throw err;
       }
-
       return routeHandler(req, res, next);
     })
   );
 }));
+
+// All errors gets propagated to the magic 4 argument default
+// handler (https://expressjs.com/en/guide/error-handling.html#the-default-error-handler).
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(err);
+});
 
 app.listen(port);
 console.log(`Server running at http://localhost:${port}`);

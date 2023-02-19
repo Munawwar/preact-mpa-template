@@ -6,6 +6,7 @@ Example repo to start a multi-page website with Preact and esbuild.
 - 💽 Express JS server
 - 🔄 Live reload
 - ✂️ Shared code chunks / Code splitting (read esbuild docs for caveats)
+- 🚀 Preload shared chunks
 - 🏝️ Create your own [islands](https://jasonformat.com/islands-architecture/)
 - 🌊 Static HTML parts doesn't even have to be generated via preact. But you could if you wish.
 
@@ -16,3 +17,6 @@ Entry files to a page should placed in `client/pages/{name}/{name}.page.jsx`.
 You will have to at least a couple of things to production-ize this template.
 1. You may not want to have a single preact context for entire website. Each page having a context might be better.
 2. Add [HTTP/2](https://www.npmjs.com/package/http2-express-bridge) support.
+
+## TODO:
+1. A way to move assets to CDN under a path of same domain and enable gzip/brotli compression on CDN

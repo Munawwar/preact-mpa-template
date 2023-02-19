@@ -4,9 +4,10 @@ import {
   __dirname,
   root,
   staticDirectory
-} from './paths.js'
+} from './paths.js';
+import shallowImportAnalyzer from './shallowImportAnalyzer.js';
 
-const isProduction = process.env.NODE_ENV === 'production'
+const isProduction = process.env.NODE_ENV === 'production';
 
 function getRelativePathToDist(distPath) {
   return path.relative(__dirname, path.resolve(root, distPath));
@@ -47,18 +48,21 @@ async function getPage(pageName, hostname) {
 
   const [
     exports,
+    preloadJs,
     preactRenderToStringExports
   ] = await Promise.all([
     import(getRelativePathToDist(jsFile)),
+    shallowImportAnalyzer(jsFile),
     import(getRelativePathToDist( preactRenderToStringFile))
   ]);
   return {
-    js: path.relative(staticDirectory, jsFile),
-    css: path.relative(staticDirectory, cssFile),
+    js: `/${path.relative(staticDirectory, jsFile)}`,
+    preloadJs,
+    css: `/${path.relative(staticDirectory, cssFile)}`,
     exports,
     preactRenderToStringExports,
     liveReloadScript
-  }
+  };
 }
 
 export default getPage;

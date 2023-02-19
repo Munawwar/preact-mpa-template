@@ -1,7 +1,7 @@
-import logo from './preact-logo.svg'
-import { PageContextProvider } from '../usePageContext'
-import { Link } from './Link'
-import './HomeLayout.css'
+import logo from './preact-logo.svg';
+import { PageContextProvider } from '../usePageContext';
+import { Link } from './Link';
+import './HomeLayout.css';
 
 const HomeLayout = function ({ children, pageContext }) {
   return (
@@ -19,8 +19,8 @@ const HomeLayout = function ({ children, pageContext }) {
         <Content>{children}</Content>
       </Layout>
     </PageContextProvider>
-  )
-}
+  );
+};
 
 const Layout = function ({ children }) {
   return (
@@ -33,8 +33,8 @@ const Layout = function ({ children }) {
     >
       {children}
     </div>
-  )
-}
+  );
+};
 
 const Sidebar = function ({ children }) {
   return (
@@ -50,8 +50,8 @@ const Sidebar = function ({ children }) {
     >
       {children}
     </div>
-  )
-}
+  );
+};
 
 const Content = function ({ children }) {
   return (
@@ -66,8 +66,8 @@ const Content = function ({ children }) {
     >
       {children}
     </div>
-  )
-}
+  );
+};
 
 function Logo() {
   return (
@@ -81,7 +81,7 @@ function Logo() {
         <img src={logo} height={64} width={64} alt="logo" />
       </a>
     </div>
-  )
+  );
 }
 
-export { HomeLayout }
+export { HomeLayout };
