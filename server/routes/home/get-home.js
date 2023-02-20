@@ -21,8 +21,8 @@ export default async (req, res) => {
     <html>
       <head>
         <link rel="stylesheet" href="${css}">
-        <script>window.pageContext=${JSON.stringify(pageContext)};</script>
         ${preloadJs.map((js) => /* html */`<link rel="modulepreload" href="${js}">`).join('\n')}
+        <script>window.pageContext=${JSON.stringify(pageContext)};</script>
         <script type="module" src="${js}"></script>
         ${liveReloadScript ? /* html */`<script src="${liveReloadScript}"></script>` : ''}
       </head>

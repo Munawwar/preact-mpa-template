@@ -1,7 +1,7 @@
 import fs from 'node:fs';
-import { publicURLPath } from './paths.js';
 
 const cache = {};
+const importStatementRegex = /(?:^|;)import[^\w].+?[^\w]from"([^"]+)/g;
 /**
  * Shallow analyzes ESM import statements of a page file
  * @param {string} distPageFilePath A page JS file in the dist/ folder.
@@ -13,11 +13,11 @@ async function shallowImportAnalyzer(distPageFilePath) {
     await handle.read(buffer, 0, 5000, 0);
     await handle.close();
     const source = buffer.toString();
-    const regex = /(?:^|;)import[^\w].+?[^\w]from"([^"]+)/g;
     const imports = [];
     let matches;
-    while ((matches = regex.exec(source))) {
-      imports.push(`${publicURLPath}/${matches[1].split('/').pop()}`);
+    importStatementRegex.lastIndex = 0;
+    while ((matches = importStatementRegex.exec(source))) {
+      imports.push(matches[1]);
     }
     cache[distPageFilePath] = imports;
   }
@@ -25,8 +25,13 @@ async function shallowImportAnalyzer(distPageFilePath) {
 }
 
 // Test
-// shallowImportAnalyzer(
-//   'dist/pages/about/about.page.js'
-// )
+// console.log(
+//   await shallowImportAnalyzer(
+//     'dist/public/pages/about/about.page-ZQOZTJGQ.js'
+//   ),
+//   await shallowImportAnalyzer(
+//     'dist/public/pages/home/home.page-FHON3K7Y.js'
+//   )
+// );
 
 export default shallowImportAnalyzer;
