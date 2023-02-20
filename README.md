@@ -19,6 +19,8 @@ npm run build
 npm run start
 ```
 
+VSCode node: Install (es6-string-html)[https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html] extension to syntax highlight HTML inside of JS template literals.
+
 Example server uses a config file for mapping URL pattern to server handling function. Config file is at `server/routes/routes.js`. This gives full flexibility on how routes and URLs are handled.
 
 Entry files to a page should placed in `client/pages/{name}/{name}.page.jsx`.
