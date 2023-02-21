@@ -33,3 +33,7 @@ You will have to do at least a couple of things to production-ize this template:
 2. Add [HTTP/2](https://www.npmjs.com/package/http2-express-bridge) support.
 3. Upload files from `dist/public` directory to a file storage origin (like AWS S3) and use a CDN to intercept everything under URL path `/public/*` (on the same domain as the express server) to point to the file storage origin. Enable dynamic compression on the CDN.
 4. You might want a CSS solution like CSS modules or utility CSS (look into esbuild plugins for these)
+
+## Credits
+
+Thanks to [vite-plugin-ssr](https://vite-plugin-ssr.com/) for some inspiration and example snippets, but I didn't use Vite here.
