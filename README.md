@@ -1,6 +1,6 @@
 # preact-mpa-starter-template
 
-Example repo to start a multi-page app/website (MPA) with Preact, express and esbuild. If you don't need server side rendering check [preact-spa-start-template](https://github.com/Munawwar/preact-spa-starter-template).
+Example repo to start a multi-page app/website (MPA) with Preact, express and esbuild. If you don't need server side rendering (SSR) check [preact-spa-start-template](https://github.com/Munawwar/preact-spa-starter-template).
 
 - 🐢 JS, CSS, image files are content hashed ("fingerprinted") on prod for long lived caching
 - 💽 Express JS server
