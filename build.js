@@ -5,8 +5,10 @@ import manifestPlugin from 'esbuild-plugin-manifest';
 import {
   publicDirectoryRelative,
   ssrDirectoryRelative,
-  publicURLPath
+  publicURLPath,
+  publicDirectory
 } from './server/paths.js';
+import fs from 'node:fs';
 
 const [entryPoints] = await Promise.all([
   glob('./client/pages/**/*.page.jsx'),
@@ -34,12 +36,13 @@ const commonConfig = {
   jsx: 'automatic'
 };
 
-await Promise.all([
+const [result] = await Promise.all([
   build({
     outdir: publicDirectoryRelative,
     splitting: true,
     minify: true,
     plugins: [manifestPlugin()],
+    metafile: true,
     ...commonConfig
   }),
   build({
@@ -50,3 +53,7 @@ await Promise.all([
     ...commonConfig
   })
 ]);
+
+if (result && result.metafile) {
+  fs.writeFileSync(`${publicDirectory}/metafile.json`, JSON.stringify(result.metafile, 0, 2));
+}

@@ -5,9 +5,9 @@ import {
   root,
   publicDirectory,
   publicURLPath,
-  ssrDirectory
+  ssrDirectory,
+  publicDirectoryRelative
 } from './paths.js';
-import shallowImportAnalyzer from './shallowImportAnalyzer.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -28,32 +28,39 @@ function getRelativePathToSSRDist(distSSRPath) {
 }
 
 let manifest;
+let metafile;
 async function getPage(pageName, hostname) {
   const filePaths = getPaths(pageName);
-  // Map from server manifest
-  // Cache manifest if not cached
+  // Map from server manifest and metafile
+  // Cache manifest and metafile if not cached
   if (!manifest) {
-    manifest = JSON.parse(
-      await fs.promises.readFile(
-        path.resolve(publicDirectory, `manifest.json`),
+    const [
+      manifestString,
+      metafileString
+    ] = await Promise.all([
+      fs.promises.readFile(
+        path.resolve(publicDirectory, 'manifest.json'),
+        'utf-8'
+      ),
+      fs.promises.readFile(
+        path.resolve(publicDirectory, 'metafile.json'),
         'utf-8'
       )
-    );
+    ]);
+    manifest = JSON.parse(manifestString);
+    metafile = JSON.parse(metafileString);
   }
 
   const jsFile = manifest[filePaths.source.jsFile];
   const cssFile = manifest[filePaths.source.cssFile];
+  const preloadJs = (metafile.outputs[jsFile].imports || [])
+    .filter(({ kind }) => kind === 'import-statement')
+    .map(({ path: filePath }) => path.resolve(publicURLPath, path.relative(publicDirectoryRelative, filePath)));
+  const exports = await import(getRelativePathToSSRDist(filePaths.ssr.jsFile));
   const liveReloadScript = isProduction
     ? undefined
     : `http://${hostname.split(':')[0]}:35729/livereload.js?snipver=1`;
 
-  const [
-    exports,
-    preloadJs
-  ] = await Promise.all([
-    import(getRelativePathToSSRDist(filePaths.ssr.jsFile)),
-    shallowImportAnalyzer(jsFile)
-  ]);
   return {
     js: `${publicURLPath}/${path.relative(publicDirectory, jsFile)}`,
     preloadJs,
