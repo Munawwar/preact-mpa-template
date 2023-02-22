@@ -27,12 +27,15 @@ function getRelativePathToSSRDist(distSSRPath) {
   return path.relative(__dirname, path.resolve(root, distSSRPath));
 }
 
-let manifest;
-let metafile;
+let manifestCache;
+let metafileCache;
 async function getPage(pageName, hostname) {
   const filePaths = getPaths(pageName);
+
   // Map from server manifest and metafile
   // Cache manifest and metafile if not cached
+  let manifest = manifestCache;
+  let metafile = metafileCache;
   if (!manifest) {
     const [
       manifestString,
@@ -49,6 +52,10 @@ async function getPage(pageName, hostname) {
     ]);
     manifest = JSON.parse(manifestString);
     metafile = JSON.parse(metafileString);
+    if (isProduction) {
+      manifestCache = manifest;
+      metafileCache = metafile;
+    }
   }
 
   const jsFile = manifest[filePaths.source.jsFile];
