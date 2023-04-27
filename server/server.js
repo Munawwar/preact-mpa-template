@@ -10,13 +10,12 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const app = express();
 
-// Use sirv on prod as is caches files read
-// On dev use express.static as we don't want strong caching
-if (isProduction) {
-  app.use(publicURLPath, sirvMiddleware(publicDirectory));
-} else {
-  app.use(publicURLPath, express.static(publicDirectory));
-}
+app.use(
+  publicURLPath,
+  sirvMiddleware(publicDirectory, {
+    dev: !isProduction
+  })
+);
 
 // Declare routes
 await Promise.all(routes.map(async ({

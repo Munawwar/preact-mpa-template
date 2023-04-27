@@ -2,13 +2,13 @@
 
 Example repo to start a multi-page app/website (MPA) with Preact, express and esbuild. If you don't need server side rendering (SSR) check [preact-spa-start-template](https://github.com/Munawwar/preact-spa-starter-template).
 
-- 🐢 JS, CSS, image files are content hashed ("fingerprinted") on prod for long lived caching
-- 💽 Express JS server
-- 🔄 Live reload
-- ✂️ Shared code chunks / Code splitting (read esbuild docs for caveats)
-- 🚀 Preload shared chunks
-- 🏝️ Create your own [islands](https://jasonformat.com/islands-architecture/)
-- 🌊 Static HTML parts doesn't even have to be generated via preact. But you could if you wish.
+- <span aria-hidden>🐢</span> JS, CSS, image files are content hashed ("fingerprinted") on prod for long lived caching
+- <span aria-hidden>💽</span> Express JS server
+- <span aria-hidden>🔄</span> Live reload
+- <span aria-hidden>✂️</span> Shared code chunks / Code splitting (read esbuild docs for caveats)
+- <span aria-hidden>🚀</span> Preload shared chunks
+- <span aria-hidden>🏝️</span> Create your own [islands](https://jasonformat.com/islands-architecture/)
+- <span aria-hidden>🌊</span> Static HTML parts doesn't even have to be generated via preact. But you could if you wish.
 
 ```sh
 # Dev
