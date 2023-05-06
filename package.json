@@ -1,5 +1,5 @@
 {
-  "name": "preact-mpa-starter-template",
+  "name": "preact-mpa-template",
   "version": "0.0.1",
   "description": "Preact multi-page app/website starter template (SSR) - with express and esbuild",
   "type": "module",
