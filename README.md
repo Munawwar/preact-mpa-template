@@ -25,7 +25,7 @@ VSCode note: Install [es6-string-html](https://marketplace.visualstudio.com/item
 
 Example server uses a config file for mapping URL pattern to server handling function. Config file is at `server/routes/routes.js`. This gives full flexibility on how routes and URLs are handled.
 
-Entry files to a page should placed in `client/pages/{name}/{name}.page.jsx`.
+Entry files to a page should placed in `client/pages/{name}/{name}.page.jsx`. Entry files should server render the entire page's HTML, that can optionally include islands from `client/pages/{name}/{name}.islands.jsx`. Islands javascript will be loaded on the client side. Other than islands javascript, no other javascript from page.jsx will load on the client side.
 
 
 You will have to do at least a couple of things to production-ize this template:
