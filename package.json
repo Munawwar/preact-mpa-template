@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "mkdirp dist && concurrently \"npm:watch:server\" \"npm:watch:assets\"",
     "watch:server": "cross-env NODE_OPTIONS=--enable-source-maps nodemon --watch server/ --watch build.js server/server.js",
-    "watch:assets": "nodemon --watch client/ --watch build.js -e js,jsx,svg,png,jpg -x \"node build.js\"",
+    "watch:assets": "nodemon --watch client/ --watch build.js -e '*' -x \"node build.js\"",
     "start": "cross-env NODE_OPTIONS=--enable-source-maps node server/server.js",
     "build": "node build.js",
     "lint": "eslint --ext js,jsx build.js server/ client/",
