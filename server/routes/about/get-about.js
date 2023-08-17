@@ -14,8 +14,8 @@ export default async (req, res) => {
     liveReloadScript
   } = await getPage('about', req.hostname);
 
-  const pageContext = { counter: 10 };
-  const pageHtml = pageToHtml(pageContext, renderToString);
+  const pageContext = { urlPathname: req.path };
+  const pageHtml = pageToHtml(renderToString, pageContext);
   const html = /* html */`
     <!DOCTYPE html>
     <html>
@@ -23,7 +23,7 @@ export default async (req, res) => {
         <link rel="stylesheet" href="${css}">
         ${preloadJs.map((js) => /* html */`<link rel="modulepreload" href="${js}">`).join('\n')}
         <script>window.pageContext=${JSON.stringify(pageContext)};</script>
-        <script type="module" src="${js}"></script>
+        ${js ? /* html */`<script type="module" src="${js}"></script>` : ''}
         ${liveReloadScript ? /* html */`<script src="${liveReloadScript}"></script>` : ''}
       </head>
       <body>

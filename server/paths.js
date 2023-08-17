@@ -7,6 +7,8 @@ const publicDirectoryRelative = 'dist/public/';
 const publicDirectory = `${root}/${publicDirectoryRelative}`;
 const ssrDirectoryRelative = 'dist/ssr/';
 const ssrDirectory = `${root}/${ssrDirectoryRelative}`;
+const nonIslandMinDirectoryRelative = 'dist/non-island-min/';
+const nonIslandMinDirectory = `${root}/${nonIslandMinDirectoryRelative}`;
 const publicURLPath = '/public';
 
 export {
@@ -16,5 +18,7 @@ export {
   publicDirectory,
   publicDirectoryRelative,
   ssrDirectory,
-  ssrDirectoryRelative
+  ssrDirectoryRelative,
+  nonIslandMinDirectoryRelative,
+  nonIslandMinDirectory
 };

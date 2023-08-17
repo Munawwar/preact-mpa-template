@@ -1,6 +1,6 @@
 export default [{
   method: 'GET',
-  pattern: '/',
+  pattern: '/', // Express.js pattern. check Express.js documentation
   handler: './home/get-home.js'
 }, {
   method: 'GET',

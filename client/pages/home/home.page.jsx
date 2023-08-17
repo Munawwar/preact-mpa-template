@@ -1,5 +1,4 @@
-import { hydrate } from 'preact';
-import { Counter } from './Counter';
+import { Island1 } from './home.islands';
 import { HomeLayout } from '../../layouts/HomeLayout';
 
 function Page({ pageContext }) {
@@ -7,28 +6,17 @@ function Page({ pageContext }) {
     <HomeLayout pageContext={pageContext}>
       <h1>Welcome</h1>
       This page is:
-      <ul>
-        <li>Rendered to HTML.</li>
-        <li>
-          Interactive. <Counter initialState={pageContext.counter} />
-        </li>
-      </ul>
+      <div id="island1">
+        <Island1 pageContext={pageContext} />
+      </div>
     </HomeLayout>
   );
-}
-
-// Client side hydration
-if (typeof window !== 'undefined') {
-  // Giant Island - for demo purpose.
-  // You can add split into proper/smaller islands and contexts and hydrate only those
-  const body = document.querySelector('body');
-  hydrate(<Page pageContext={window.pageContext} />, body);
 }
 
 // Server render helper
 // Not importing 'preact-render-to-string'.renderToString directly,
 // because it will end up unnecessarily in the client side bundle
-function pageToHtml(pageContext, renderToString) {
+function pageToHtml(renderToString, pageContext) {
   return renderToString(<Page pageContext={pageContext} />);
 }
 

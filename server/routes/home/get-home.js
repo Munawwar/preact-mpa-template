@@ -14,8 +14,8 @@ export default async (req, res) => {
     liveReloadScript
   } = await getPage('home', req.hostname);
 
-  const pageContext = { counter: 10 };
-  const pageHtml = pageToHtml(pageContext, renderToString);
+  const pageContext = { counter: 10, urlPathname: req.path };
+  const pageHtml = pageToHtml(renderToString, pageContext);
   const html = /* html */`
     <!DOCTYPE html>
     <html>
@@ -27,10 +27,6 @@ export default async (req, res) => {
         ${liveReloadScript ? /* html */`<script src="${liveReloadScript}"></script>` : ''}
       </head>
       <body>
-        <!--
-          Giant Island - for demo purpose. You can add static HTML and
-          split into proper islands and contexts as needed 
-        -->
         ${pageHtml}
       </body>
     </html>
