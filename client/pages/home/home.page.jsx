@@ -19,8 +19,6 @@ function Page({ pageContext }) {
 
 // Client side hydration
 if (typeof window !== 'undefined') {
-  // Giant Island - for demo purpose.
-  // You can add split into proper/smaller islands and contexts and hydrate only those
   const body = document.querySelector('body');
   hydrate(<Page pageContext={window.pageContext} />, body);
 }
