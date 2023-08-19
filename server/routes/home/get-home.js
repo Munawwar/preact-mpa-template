@@ -14,7 +14,7 @@ export default async (req, res) => {
     liveReloadScript
   } = await getPage('home', req.hostname);
 
-  const pageContext = { counter: 10 };
+  const pageContext = { counter: 10, urlPathname: req.path };
   const pageHtml = pageToHtml(pageContext, renderToString);
   const html = /* html */`
     <!DOCTYPE html>

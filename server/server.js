@@ -3,13 +3,14 @@ import sirvMiddleware from 'sirv';
 import asyncHandler from 'express-async-handler';
 import routes from './routes/routes.js';
 import { publicURLPath, publicDirectory } from './paths.js';
-
+import compression from 'compression';
 const port = process.env.PORT || 5132;
 
 const isProduction = process.env.NODE_ENV === 'production';
 
 const app = express();
 
+app.use(compression());
 app.use(
   publicURLPath,
   sirvMiddleware(publicDirectory, {
