@@ -7,7 +7,7 @@ function Page({ pageContext }) {
     <HomeLayout pageContext={pageContext}>
       <h1>About</h1>
       <p>
-       <code class="code">SSR demo</code>
+        <code class="code">SSR demo</code>
       </p>
     </HomeLayout>
   );
