@@ -34,32 +34,33 @@ async function getPage(pageName, hostname) {
 
   // Map from server manifest and metafile
   // Cache manifest and metafile if not cached
-  let manifest = manifestCache;
   let metafile = metafileCache;
+  let manifest = manifestCache;
   if (!manifest) {
-    const [
-      manifestString,
-      metafileString
-    ] = await Promise.all([
-      fs.promises.readFile(
-        path.resolve(publicDirectory, 'manifest.json'),
-        'utf-8'
-      ),
-      fs.promises.readFile(
-        path.resolve(publicDirectory, 'metafile.json'),
-        'utf-8'
-      )
-    ]);
-    manifest = JSON.parse(manifestString);
+    const metafileString = await fs.promises.readFile(
+      path.resolve(publicDirectory, 'metafile.json'),
+      'utf-8'
+    );
     metafile = JSON.parse(metafileString);
+    // Reverse map source file to output JS and CSS file
+    manifest = Object
+      .entries(metafile.outputs)
+      .reduce((acc, [outputFileName, info]) => {
+        if (info.entryPoint) {
+          acc[info.entryPoint] = {
+            jsFile: outputFileName,
+            cssFile: info.cssBundle
+          };
+        }
+        return acc;
+      }, {});
     if (isProduction) {
       manifestCache = manifest;
       metafileCache = metafile;
     }
   }
 
-  const jsFile = manifest[filePaths.source.jsFile];
-  const cssFile = manifest[filePaths.source.cssFile];
+  const { jsFile, cssFile } = manifest[filePaths.source.jsFile] || {};
   const preloadJs = (metafile.outputs[jsFile].imports || [])
     .filter(({ kind }) => kind === 'import-statement')
     .map(({ path: filePath }) => path.resolve(publicURLPath, path.relative(publicDirectoryRelative, filePath)));

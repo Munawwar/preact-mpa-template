@@ -1,7 +1,6 @@
 import { build } from 'esbuild';
 import glob from 'tiny-glob';
 import rimraf from 'rimraf';
-import manifestPlugin from 'esbuild-plugin-manifest';
 import {
   publicDirectoryRelative,
   ssrDirectoryRelative,
@@ -41,7 +40,7 @@ const [result] = await Promise.all([
     outdir: publicDirectoryRelative,
     splitting: true,
     minify: true,
-    plugins: [manifestPlugin()],
+    entryNames: '[dir]/[name]-[hash]',
     metafile: true,
     ...commonConfig
   }),
