@@ -1,5 +1,5 @@
 import path from 'node:path';
-import fs from 'node:fs';
+import { promises as fs } from 'node:fs';
 import {
   __dirname,
   root,
@@ -28,43 +28,58 @@ function getRelativePathToSSRDist(distSSRPath) {
 }
 
 let manifestCache;
-let metafileCache;
+let metafilesCache;
 async function getPage(pageName, hostname) {
   const filePaths = getPaths(pageName);
 
-  // Map from server manifest and metafile
-  // Cache manifest and metafile if not cached
-  let metafile = metafileCache;
+  // Map from build meta files
+  let metafiles = metafilesCache;
+  // Construct and cache manifest if not cached
   let manifest = manifestCache;
   if (!manifest) {
-    const metafileString = await fs.promises.readFile(
-      path.resolve(publicDirectory, 'metafile.json'),
-      'utf-8'
-    );
-    metafile = JSON.parse(metafileString);
+    const [publicMetafileString, ssrMetafileString] = await Promise.all([
+      fs.readFile(
+        path.resolve(publicDirectory, 'metafile.json'),
+        'utf-8'
+      ),
+      fs.readFile(
+        path.resolve(ssrDirectory, 'metafile.json'),
+        'utf-8'
+      )
+    ]);
+    metafiles = {
+      public: JSON.parse(publicMetafileString),
+      ssr: JSON.parse(ssrMetafileString)
+    };
     // Reverse map source file to output JS and CSS file
-    manifest = Object
-      .entries(metafile.outputs)
-      .reduce((acc, [outputFileName, info]) => {
-        if (info.entryPoint) {
-          acc[info.entryPoint] = {
-            jsFile: outputFileName,
-            cssFile: info.cssBundle
-          };
-        }
-        return acc;
-      }, {});
+    manifest = Object.fromEntries(
+      Object.entries(metafiles).map(([key, metafile]) => [
+        key,
+        Object
+          .entries(metafile.outputs)
+          .reduce((acc, [outputFileName, info]) => {
+            if (info.entryPoint) {
+              acc[info.entryPoint] = {
+                jsFile: outputFileName,
+                cssFile: info.cssBundle
+              };
+            }
+            return acc;
+          }, {})
+      ])
+    );
     if (isProduction) {
       manifestCache = manifest;
-      metafileCache = metafile;
+      metafilesCache = metafiles;
     }
   }
 
-  const { jsFile, cssFile } = manifest[filePaths.source.jsFile] || {};
-  const preloadJs = (metafile.outputs[jsFile].imports || [])
+  const { jsFile, cssFile } = manifest.public[filePaths.source.jsFile] || {};
+  const preloadJs = (metafiles.public.outputs[jsFile].imports || [])
     .filter(({ kind }) => kind === 'import-statement')
     .map(({ path: filePath }) => path.resolve(publicURLPath, path.relative(publicDirectoryRelative, filePath)));
-  const exports = await import(getRelativePathToSSRDist(filePaths.ssr.jsFile));
+  const { jsFile: ssrJsFile } = manifest.ssr[filePaths.source.jsFile] || {};
+  const exports = await import(getRelativePathToSSRDist(ssrJsFile));
   const liveReloadScript = isProduction
     ? undefined
     : `http://${hostname.split(':')[0]}:35729/livereload.js?snipver=1`;

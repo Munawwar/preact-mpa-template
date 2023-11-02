@@ -5,9 +5,10 @@ import {
   publicDirectoryRelative,
   ssrDirectoryRelative,
   publicURLPath,
-  publicDirectory
+  publicDirectory,
+  ssrDirectory
 } from './server/paths.js';
-import fs from 'node:fs';
+import { promises as fs } from 'node:fs';
 
 const [entryPoints] = await Promise.all([
   glob('./client/pages/**/*.page.jsx'),
@@ -18,10 +19,12 @@ const [entryPoints] = await Promise.all([
 
 const commonConfig = {
   entryPoints,
+  entryNames: '[dir]/[name]-[hash]',
   outbase: 'client/',
   publicPath: publicURLPath,
   format: 'esm',
   bundle: true,
+  metafile: true,
   sourcemap: true,
   loader: {
     '.svg': 'file',
@@ -35,13 +38,11 @@ const commonConfig = {
   jsx: 'automatic'
 };
 
-const [result] = await Promise.all([
+const [result1, result2] = await Promise.all([
   build({
     outdir: publicDirectoryRelative,
     splitting: true,
     minify: true,
-    entryNames: '[dir]/[name]-[hash]',
-    metafile: true,
     ...commonConfig
   }),
   build({
@@ -53,6 +54,9 @@ const [result] = await Promise.all([
   })
 ]);
 
-if (result && result.metafile) {
-  fs.writeFileSync(`${publicDirectory}/metafile.json`, JSON.stringify(result.metafile, 0, 2));
+if (result1 && result1.metafile) {
+  await Promise.all([
+    fs.writeFile(`${publicDirectory}/metafile.json`, JSON.stringify(result1.metafile, 0, 2)),
+    fs.writeFile(`${ssrDirectory}/metafile.json`, JSON.stringify(result2.metafile, 0, 2))
+  ]);
 }
