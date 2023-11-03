@@ -38,7 +38,13 @@ const commonConfig = {
   jsx: 'automatic'
 };
 
-const [result1, result2] = await Promise.all([
+// Why 2 builds?
+// 1. Client side build - JS, CSS, images etc for the client side
+// 2. SSR build - Non-minified full page JS for server side for better stack traces
+// And also because preact-render-to-string includes node.js copy of preact. If you don't exclude preact from the build,
+// you would cause two preact copies (one in the bundled JS and one from preact-render-to-string)
+// Also note, using hashed SSR files just like client build, so that server can dynamic import() changes without restarting full server
+const [publicBuildResult, ssrBuildResult] = await Promise.all([
   build({
     outdir: publicDirectoryRelative,
     splitting: true,
@@ -54,9 +60,9 @@ const [result1, result2] = await Promise.all([
   })
 ]);
 
-if (result1 && result1.metafile) {
+if (publicBuildResult && publicBuildResult.metafile) {
   await Promise.all([
-    fs.writeFile(`${publicDirectory}/metafile.json`, JSON.stringify(result1.metafile, 0, 2)),
-    fs.writeFile(`${ssrDirectory}/metafile.json`, JSON.stringify(result2.metafile, 0, 2))
+    fs.writeFile(`${publicDirectory}/metafile.json`, JSON.stringify(publicBuildResult.metafile, 0, 2)),
+    fs.writeFile(`${ssrDirectory}/metafile.json`, JSON.stringify(ssrBuildResult.metafile, 0, 2))
   ]);
 }
