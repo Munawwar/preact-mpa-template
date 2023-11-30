@@ -25,7 +25,7 @@ const commonConfig = {
   format: 'esm',
   bundle: true,
   metafile: true,
-  sourcemap: true,
+  sourcesContent: false,
   loader: {
     '.svg': 'file',
     '.png': 'file',
@@ -49,12 +49,14 @@ const [publicBuildResult, ssrBuildResult] = await Promise.all([
     outdir: publicDirectoryRelative,
     splitting: true,
     minify: true,
+    sourcemap: true,
     ...commonConfig
   }),
   build({
     outdir: ssrDirectoryRelative,
     splitting: false,
     minify: false,
+    sourcemap: 'inline',
     external: ['preact', 'preact-render-to-string'],
     ...commonConfig
   })
