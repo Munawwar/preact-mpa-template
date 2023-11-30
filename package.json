@@ -5,9 +5,10 @@
   "type": "module",
   "module": "server/server.js",
   "scripts": {
-    "dev": "mkdirp dist && concurrently \"npm:watch:server\" \"npm:watch:assets\"",
-    "watch:server": "cross-env NODE_OPTIONS=--enable-source-maps nodemon --watch server/ --watch build.js server/server.js",
-    "watch:assets": "nodemon --watch client/ --watch build.js -e '*' -x \"node build.js\"",
+    "dev": "mkdirp dist && concurrently \"npm:watch:server\" \"npm:watch:build\" \"npm:watch:livereload\"",
+    "watch:server": "cross-env NODE_OPTIONS=--enable-source-maps nodemon --watch server/ --ignore server/livereload.js --watch build.js server/server.js",
+    "watch:build": "nodemon --watch client/ --watch build.js -e '*' -x \"node build.js\"",
+    "watch:livereload": "nodemon --watch server/livereload.js server/livereload.js",
     "start": "cross-env NODE_OPTIONS=--enable-source-maps node server/server.js",
     "build": "node build.js",
     "lint": "eslint --ext js,jsx build.js server/ client/",
