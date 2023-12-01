@@ -9,6 +9,20 @@ import {
   ssrDirectory
 } from './server/paths.js';
 import { promises as fs } from 'node:fs';
+import { parseArgs } from 'node:util';
+
+const {
+  values: {
+    dev: isDevMode
+  }
+} = parseArgs({
+  options: {
+    dev: {
+      type: 'boolean',
+      default: false
+    }
+  }
+});
 
 const [entryPoints] = await Promise.all([
   glob('./client/pages/**/*.page.jsx'),
@@ -25,7 +39,7 @@ const commonConfig = {
   format: 'esm',
   bundle: true,
   metafile: true,
-  sourcesContent: false,
+  sourcesContent: isDevMode,
   loader: {
     '.svg': 'file',
     '.png': 'file',
