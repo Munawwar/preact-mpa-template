@@ -5,7 +5,7 @@
   "type": "module",
   "module": "server/server.js",
   "scripts": {
-    "dev": "mkdirp dist && concurrently \"npm:watch:server\" \"npm:watch:build\" \"npm:watch:livereload\"",
+    "dev": "mkdirp dist && concurrently -i -c \"auto\" \"npm:watch:server\" \"npm:watch:build\" \"npm:watch:livereload\"",
     "watch:server": "nodemon --enable-source-maps --watch server/ --ignore server/livereload.js --watch build.js server/server.js",
     "watch:build": "nodemon --watch client/ --watch build.js -e '*' -x \"node build.js --dev\"",
     "watch:livereload": "nodemon --watch server/livereload.js server/livereload.js",
