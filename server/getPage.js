@@ -24,6 +24,25 @@ function getRelativePathToSSRDist(distSSRPath) {
 
 let manifestsCache;
 let metafilesCache;
+/**
+ * Use this function on the server-side to get the client-side page code and dependencies
+ * (exported functions, JS, shared JS, CSS URLs etc from the build of client/pages/<pageName>/<pageName>.page.jsx).
+ *
+ * `exports` property has the JS functions that were exported from the page component, loaded
+ * (imported) and ready, which can then be called to render the page to HTML.
+ *
+ * `css`, `js`, `preloadJs` and `liveReloadScript` are URLs, that can be added to HTML head.
+ * `js` is the URL to page component file. `preloadJs` are shared JS files that are dependencies to the page JS.
+ * @param {string} pageName Name of the page. You can find the name part from client/pages/<pageName>/<pageName>.page.jsx
+ * @param {string} hostname e.g. "localhost:5000" or "my-domain.com"
+ * @returns {Promise<{
+ *   js: string,
+ *   preloadJs: string[],
+ *   css: string,
+ *   exports: Record<string, Function>,
+ *   liveReloadScript?: string
+ * }>}
+ */
 async function getPage(pageName, hostname) {
   const filePaths = getPaths(pageName);
 

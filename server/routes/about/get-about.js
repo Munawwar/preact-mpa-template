@@ -6,6 +6,7 @@ import getPage from "../../getPage.js";
  * @param {import('express').Response} res
  */
 export default async (req, res) => {
+  // Find the built code of client/pages/about/about.page.jsx
   const {
     js,
     preloadJs,
