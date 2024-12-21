@@ -46,7 +46,6 @@ const commonConfig = {
   format: 'esm',
   bundle: true,
   metafile: true,
-  sourcesContent: isDevMode,
   loader: {
     '.svg': 'file',
     '.png': 'file',
@@ -77,6 +76,7 @@ const serverBuildConfig = {
   splitting: false,
   minify: false,
   sourcemap: 'inline',
+  sourcesContent: isDevMode,
   external: ['preact', 'preact-render-to-string'],
   ...commonConfig
 };
