@@ -15,7 +15,9 @@ npm run dev
 
 # Prod
 npm run build
-npm run start
+node server/server.js
+# Don't use `npm run prod-debug` here as npm is known to swallow process signals
+# Also --enable-source-maps is heavy, so use it cautiously
 ```
 
 VSCode note: Install [es6-string-html](https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html) extension to syntax highlight HTML inside of JS template literals.

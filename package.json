@@ -9,7 +9,7 @@
     "watch:server": "nodemon --enable-source-maps --experimental-loader hot-esm --watch nothing/ --watch build.js server/server.js",
     "watch:build": "nodemon --watch build.js -x \"node build.js --dev --watch\"",
     "watch:livereload": "node --watch server/livereload.js server/livereload.js",
-    "start": "node --enable-source-maps server/server.js",
+    "prod-debug": "node --enable-source-maps server/server.js",
     "build": "node build.js",
     "lint": "eslint --ext js,jsx build.js server/ client/",
     "lint:fix": "eslint --fix --ext js,jsx build.js server/ client/"
