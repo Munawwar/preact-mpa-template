@@ -70,7 +70,6 @@ const publicBuildConfig = {
   splitting: true,
   minify: true,
   sourcemap: true,
-  // entryNames: '[dir]/[name]-[hash]',
   ...commonConfig
 };
 const serverBuildConfig = {
