@@ -95,7 +95,7 @@ async function writeMetafile(publicBuildResult, ssrBuildResult) {
   }
 }
 
-writeMetafile(publicBuildResult, ssrBuildResult);
+await writeMetafile(publicBuildResult, ssrBuildResult);
 
 if (watch) {
   const watchGlob = 'client/';
@@ -107,17 +107,25 @@ if (watch) {
     context(serverBuildConfig)
   ]);
 
+  let rebuildTimer;
+  const rebuildThrottle = () => {
+    clearTimeout(rebuildTimer);
+    rebuildTimer = setTimeout(incrementalRebuild, 50);
+  };
+
+  const incrementalRebuild = async () => {
+    const startTime = performance.now();
+    const [publicBuildResult, ssrBuildResult] = await Promise.all([
+      ctx1.rebuild(),
+      ctx2.rebuild()
+    ]);
+    await writeMetafile(publicBuildResult, ssrBuildResult);
+    console.log(`rebuilt in ${(performance.now() - startTime).toFixed(2)} ms`);
+  };
+
   chokidar
     .watch(watchGlob, {
       ignoreInitial: true
     })
-    .on('all', async () => {
-      const startTime = performance.now();
-      const [publicBuildResult, ssrBuildResult] = await Promise.all([
-        ctx1.rebuild(),
-        ctx2.rebuild()
-      ]);
-      writeMetafile(publicBuildResult, ssrBuildResult);
-      console.log(`rebuilt in ${(performance.now() - startTime).toFixed(2)} ms`);
-    });
+    .on('all', rebuildThrottle);
 }

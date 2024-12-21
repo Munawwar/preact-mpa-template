@@ -31,7 +31,7 @@
             updatedLink.rel = 'stylesheet';
             updatedLink.href = newUrl;
             oldLink.parentNode.insertBefore(updatedLink, oldLink.nextSibling);
-            setTimeout(() => oldLink.parentNode.removeChild(oldLink), 50);
+            setTimeout(() => oldLink.remove(), 50);
           }
         });
       } else {

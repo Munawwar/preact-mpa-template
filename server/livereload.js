@@ -32,6 +32,7 @@ const watcher = chokidar.watch(
     `${root}/server/`
   ],
   {
+    ignoreInitial: true,
     ignored: (path) => (
       path === publicMetafile ||
       (path.startsWith(publicDirectory) && ignorePublicFileRegex.test(path))
@@ -51,7 +52,8 @@ function sendPageReload() {
 /** @type {{ eventType: 'add' | 'unlink' | 'change', pathAbsolute: string }[]} */
 let buffer = [];
 function sendMessage() {
-  if (buffer.length === 0) return;
+  if (!buffer.length) return;
+  // console.log('buffer', buffer);
   const operations = buffer.reduce((acc, { eventType, pathAbsolute }) => {
     if (!acc.reload && pathAbsolute.endsWith('.css')) {
       const fileURI = pathToFileURL(pathAbsolute).href;
@@ -97,6 +99,7 @@ function sendMessage() {
     });
     const remove = Object.values(operations.css.remove);
     const replace = Object.values(operations.css.replace);
+    // console.log(operations.css);
     // Addition of new CSS files don't immediately affect a page until
     // it is imported from JS. So only consider replace and removes.
     if (remove.length || replace.length) {
@@ -115,9 +118,13 @@ function sendMessage() {
 
 let timer;
 function sendMessageThrottle(eventType, pathAbsolute) {
-  buffer.push({ eventType, pathAbsolute });
-  clearTimeout(timer);
-  timer = setTimeout(sendMessage, 50);
+  if (eventType === 'change' || eventType === 'unlink' || eventType === 'add') {
+    buffer.push({ eventType, pathAbsolute });
+    clearTimeout(timer);
+    // 200ms is a hack, because esbuild first adds files, then there is a
+    // significant delay before it removes old files
+    timer = setTimeout(sendMessage, 200);
+  }
 }
 
 watcher.on('all', sendMessageThrottle);
