@@ -16,16 +16,14 @@
         const { remove = [], replace = [] } = data.operations || {};
 
         remove.forEach(url => {
-          const linkToRemove = document.querySelector(`link[href*="${url}?"]`) ||
-              document.querySelector(`link[href="${url}"]`);
+          const linkToRemove = document.querySelector(`link[href="${url}"]`);
           if (linkToRemove) {
             linkToRemove.parentNode.removeChild(linkToRemove);
           }
         });
 
         replace.forEach(({ oldUrl, newUrl }) => {
-          const oldLink = document.querySelector(`link[href*="${oldUrl}?"]`) ||
-              document.querySelector(`link[href="${oldUrl}"]`);
+          const oldLink = document.querySelector(`link[href="${oldUrl}"]`);
           if (oldLink) {
             const updatedLink = document.createElement('link');
             updatedLink.rel = 'stylesheet';

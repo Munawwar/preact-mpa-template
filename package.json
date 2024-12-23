@@ -5,10 +5,9 @@
   "type": "module",
   "module": "server/server.js",
   "scripts": {
-    "dev": "mkdirp dist && concurrently -i -c \"auto\" \"npm:watch:server\" \"npm:watch:build\" \"npm:watch:livereload\"",
+    "dev": "mkdirp dist && concurrently -i -c \"auto\" \"npm:watch:server\" \"npm:watch:build\"",
     "watch:server": "nodemon --enable-source-maps --experimental-loader hot-esm --watch nothing/ --watch build.js server/server.js",
-    "watch:build": "nodemon --watch build.js -x \"node build.js --dev --watch\"",
-    "watch:livereload": "node --watch server/livereload.js server/livereload.js",
+    "watch:build": "nodemon --watch build.js -x \"node build.js --dev --watch --livereload\"",
     "prod-debug": "node --enable-source-maps server/server.js",
     "build": "node build.js",
     "lint": "eslint --ext js,jsx build.js server/ client/",

@@ -1,22 +1,26 @@
-import { build, context } from 'esbuild';
+import { context } from 'esbuild';
 import glob from 'tiny-glob';
 import chokidar from 'chokidar';
 import { parseArgs } from 'node:util';
+import pathModule from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import rimraf from 'rimraf';
 import {
+  root,
   publicDirectoryRelative,
   ssrDirectoryRelative,
   publicURLPath,
   publicDirectory,
   ssrDirectory
 } from './server/paths.js';
-import { promises as fs } from 'node:fs';
+import fs, { promises as fsPromises } from 'node:fs';
 
 const {
   values: {
     dev: isDevMode,
-    watch
+    watch,
+    livereload
   }
 } = parseArgs({
   options: {
@@ -25,6 +29,10 @@ const {
       default: false
     },
     watch: {
+      type: 'boolean',
+      default: false
+    },
+    livereload: {
       type: 'boolean',
       default: false
     }
@@ -81,31 +89,44 @@ const serverBuildConfig = {
   ...commonConfig
 };
 
+const [ctx1, ctx2] = await Promise.all([
+  context(publicBuildConfig),
+  context(serverBuildConfig)
+]);
+
 const [publicBuildResult, ssrBuildResult] = await Promise.all([
-  build(publicBuildConfig),
-  build(serverBuildConfig)
+  ctx1.rebuild(),
+  ctx2.rebuild()
 ]);
 
 async function writeMetafile(publicBuildResult, ssrBuildResult) {
   if (publicBuildResult && publicBuildResult.metafile) {
     await Promise.all([
-      fs.writeFile(`${publicDirectory}/metafile.json`, JSON.stringify(publicBuildResult.metafile, 0, 2)),
-      fs.writeFile(`${ssrDirectory}/metafile.json`, JSON.stringify(ssrBuildResult.metafile, 0, 2))
+      fsPromises.writeFile(`${publicDirectory}/metafile.json`, JSON.stringify(publicBuildResult.metafile, 0, 2)),
+      fsPromises.writeFile(`${ssrDirectory}/metafile.json`, JSON.stringify(ssrBuildResult.metafile, 0, 2))
     ]);
   }
 }
 
 await writeMetafile(publicBuildResult, ssrBuildResult);
 
+async function listFiles(dir) {
+  const dirents = await fsPromises.readdir(dir, { withFileTypes: true });
+  const files = await Promise.all(dirents.map((dirent) => {
+    const res = pathModule.resolve(dir, dirent.name);
+    return dirent.isDirectory() ? listFiles(res) : res;
+  }));
+  /** @type {string[]} */
+  return files.flat().sort();
+}
+
+let currentFiles = await listFiles(publicDirectory);
+
 if (watch) {
   const watchGlob = 'client/';
   // mimicking nodemon logs
   console.debug(`watching path: ${watchGlob}`);
   console.debug(`watching extensions: (all)`);
-  const [ctx1, ctx2] = await Promise.all([
-    context(publicBuildConfig),
-    context(serverBuildConfig)
-  ]);
 
   let rebuildTimer;
   const rebuildThrottle = () => {
@@ -113,14 +134,25 @@ if (watch) {
     rebuildTimer = setTimeout(incrementalRebuild, 50);
   };
 
+  let buffer = [];
+  let fireFileChanges = () => {};
+
   const incrementalRebuild = async () => {
     const startTime = performance.now();
     const [publicBuildResult, ssrBuildResult] = await Promise.all([
       ctx1.rebuild(),
       ctx2.rebuild()
     ]);
-    await writeMetafile(publicBuildResult, ssrBuildResult);
     console.log(`rebuilt in ${(performance.now() - startTime).toFixed(2)} ms`);
+
+    // Give some time for chokidar to figure out overwritten changes
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const bufferRef = buffer;
+    if (buffer.length) buffer = [];
+    await Promise.all([
+      writeMetafile(publicBuildResult, ssrBuildResult),
+      fireFileChanges(bufferRef)
+    ]);
   };
 
   chokidar
@@ -128,4 +160,167 @@ if (watch) {
       ignoreInitial: true
     })
     .on('all', rebuildThrottle);
+
+  if (livereload) {
+    const { WebSocketServer } = await import('ws');
+    const http = await import('node:http');
+    const clientFile = pathModule.join(root, 'client/livereload-client.js');
+    const httpServer = http.createServer((req, res) => {
+      if (req.url === '/livereload-client.js') {
+        res.writeHead(200, { 'Content-Type': 'application/javascript' });
+        fs.createReadStream(clientFile).pipe(res);
+      }
+    });
+    const wss = new WebSocketServer({ server: httpServer });
+
+    const metafilePath = `${publicDirectory}metafile.json`;
+    const bufferChangedFiles = (path) => {
+      if (!path.endsWith('.map') && path !== metafilePath) {
+        buffer.push({ event: 'change', path });
+      }
+    };
+
+    const hashedURLReplaceRegex = /-\w{8}([.\w]+)$/i;
+    const publicDirectoryFileURI = pathToFileURL(publicDirectory).href;
+    const fileToUrl = (pathAbsolute) => {
+      const fileURI = pathToFileURL(pathAbsolute).href;
+      const suffix = fileURI.slice(publicDirectoryFileURI.length);
+      return `${publicURLPath}/${suffix}`;
+    };
+    const fileToStableUrl = (pathAbsolute) => {
+      const url = fileToUrl(pathAbsolute);
+      return {
+        stableUrl: url.replace(hashedURLReplaceRegex, '$1'),
+        url
+      };
+    };
+
+    /**
+     * @param {{ event: string, path: string }[]} buffer
+     * @param {string[]} oldFiles
+     * @param {string[]} newFiles
+     */
+    fireFileChanges = async (buffer) => {
+      // filter out .js.map and .css.map files and metafile.json
+      const oldFiles = currentFiles.filter((path) => !path.endsWith('.map') && path !== metafilePath);
+      currentFiles = await listFiles(publicDirectory);
+      const newFiles = currentFiles.filter((path) => !path.endsWith('.map') && path !== metafilePath);
+      /** @type {{
+       *   stableUrlToHashUrl: { [stableUrl: string]: string },
+       *   fileToUrlLookup: { [path: string]: {stableUrl: string, url: string} }
+       * }} */
+      const {
+        stableUrlToHashUrl: oldStableUrlToHashUrl,
+        fileToUrlLookup: oldFileToUrlLookup
+      } = oldFiles.reduce((acc, pathAbsolute) => {
+        const { stableUrl, url } = fileToStableUrl(pathAbsolute);
+        acc.stableUrlToHashUrl[stableUrl] = url;
+        acc.fileToUrlLookup[pathAbsolute] = { stableUrl, url };
+        return acc;
+      }, {
+        stableUrlToHashUrl: {},
+        fileToUrlLookup: {}
+      });
+      /** @type {{
+       *   stableUrlToHashUrl: { [stableUrl: string]: string },
+       *   fileToUrlLookup: { [path: string]: {stableUrl: string, url: string} }
+       * }} */
+      const {
+        stableUrlToHashUrl: newStableUrlToHashUrl,
+        fileToUrlLookup: newFileToUrlLookup
+      } = newFiles.reduce((acc, pathAbsolute) => {
+        const { stableUrl, url } = fileToStableUrl(pathAbsolute);
+        acc.stableUrlToHashUrl[stableUrl] = url;
+        acc.fileToUrlLookup[pathAbsolute] = { stableUrl, url };
+        return acc;
+      }, {
+        stableUrlToHashUrl: {},
+        fileToUrlLookup: {}
+      });
+      const oldFilesSet = new Set(oldFiles);
+      const oldStableUrlSet = new Set(Object.keys(oldStableUrlToHashUrl));
+      const newFilesSet = new Set(newFiles);
+      const newStableUrlSet = new Set(Object.keys(newStableUrlToHashUrl));
+      const changes = {
+        add: {},
+        remove: {},
+        replace: {}
+      };
+      oldFiles.forEach((oldFile) => {
+        if (!newFilesSet.has(oldFile)) {
+          const { stableUrl: oldStableUrl, url: oldHashUrl } = oldFileToUrlLookup[oldFile];
+          // If only hash suffix of file changed, that means it was a "replace" and not a "remove".
+          if (newStableUrlSet.has(oldStableUrl)) {
+            changes.replace[oldStableUrl] = {
+              oldUrl: oldHashUrl,
+              newUrl: newStableUrlToHashUrl[oldStableUrl]
+            };
+          } else {
+            changes.remove[oldStableUrl] = oldHashUrl;
+          }
+        }
+      });
+      newFiles.forEach((newFile) => {
+        if (!oldFilesSet.has(newFile)) {
+          const { stableUrl: newStableUrl, url: newUrl } = newFileToUrlLookup[newFile];
+          // If only hash suffix of file changed, that means it was a "replace" and not a "remove".
+          if (oldStableUrlSet.has(newStableUrl)) {
+            changes.replace[newStableUrl] = {
+              oldUrl: oldStableUrlToHashUrl[newStableUrl],
+              newUrl
+            };
+          } else {
+            changes.add[newStableUrl] = newUrl;
+          }
+        }
+      });
+      // the file path here is the public directory's hashed file
+      buffer.forEach(({ event, path }) => {
+        if (event === 'change') {
+          const {stableUrl, url} = fileToStableUrl(path);
+          changes.replace[stableUrl] = {
+            oldUrl: url,
+            newUrl: url
+          };
+        }
+      });
+
+      // Any non-CSS file change should trigger a browser reload
+      const remove = Object.values(changes.remove);
+      const replace = Object.values(changes.replace);
+      const reload = [
+        ...remove,
+        ...Object.keys(changes.replace)
+      ].some((url) => !url.endsWith('.css'));
+      if (reload) {
+        console.log('reloading');
+        wss.clients.forEach(client => {
+          client.send(JSON.stringify({ type: 'reload' }));
+        });
+        // Adds don't need to be sent to the client, until a JS file change is made (which causes a page reload)
+      } else if (remove.length || replace.length) {
+        wss.clients.forEach(client => {
+          client.send(JSON.stringify({
+            type: 'css',
+            operations: {
+              remove,
+              replace
+            }
+          }));
+        });
+      }
+    };
+
+    chokidar
+      .watch(publicDirectory, {
+        ignoreInitial: true
+      }).on('change', bufferChangedFiles);
+
+    httpServer.listen(35729, () => {
+      console.log('livereload server started on port 35729');
+    });
+  }
+} else {
+  ctx1.dispose();
+  ctx2.dispose();
 }
