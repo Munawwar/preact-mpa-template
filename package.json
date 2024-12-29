@@ -1,7 +1,7 @@
 {
   "name": "preact-mpa-template",
   "version": "0.0.1",
-  "description": "Preact multi-page app/website starter template (SSR) - with express and esbuild",
+  "description": "Preact multi-page app/website starter template (SSR) - with Fastify and esbuild",
   "type": "module",
   "module": "server/server.js",
   "scripts": {
@@ -22,9 +22,9 @@
   "author": "Munawwar",
   "license": "MIT",
   "dependencies": {
-    "compression": "^1.7.4",
-    "express": "^4.18.2",
-    "express-async-handler": "^1.2.0",
+    "@fastify/compress": "^8.0.1",
+    "@fastify/static": "^8.0.3",
+    "fastify": "^5.2.0",
     "html-safe-json": "^2.0.3",
     "preact": "^10.12.1",
     "preact-render-to-string": "^5.2.6"

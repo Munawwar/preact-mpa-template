@@ -1,17 +1,17 @@
-import express from 'express';
-import asyncHandler from 'express-async-handler';
+import fastify from 'fastify';
+import fastifyStatic from '@fastify/static';
+import fastifyCompress from '@fastify/compress';
 import routes from './routes/routes.js';
 import { publicURLPath, publicDirectory } from './paths.js';
-import compression from 'compression';
 const port = process.env.PORT || 5132;
 
-const app = express();
+const app = fastify();
 
-app.use(compression());
-app.use(
-  publicURLPath,
-  express.static(publicDirectory)
-);
+await app.register(fastifyCompress);
+await app.register(fastifyStatic, {
+  root: publicDirectory,
+  prefix: publicURLPath
+});
 
 // Declare routes
 await Promise.all(routes.map(async ({
@@ -20,10 +20,11 @@ await Promise.all(routes.map(async ({
   middlewares = [],
   handler
 }) => {
-  app[method.toLowerCase()](
-    pattern,
-    ...middlewares,
-    asyncHandler(async (req, res, next) => {
+  app.route({
+    method: method.toUpperCase(),
+    url: pattern,
+    preHandler: middlewares,
+    handler: async (request, reply) => {
       let routeHandler;
       try {
         // Lazy-load the routes so that node.js doesn't incur a heavy start-up
@@ -35,18 +36,21 @@ await Promise.all(routes.map(async ({
         console.error('Could not find handler file:', handler);
         throw err;
       }
-      return routeHandler(req, res, next);
-    })
-  );
+      return routeHandler(request, reply);
+    }
+  });
 }));
 
-// All errors gets propagated to the magic 4 argument default
-// handler (https://expressjs.com/en/guide/error-handling.html#the-default-error-handler).
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).send('Unexpected error');
+// Global error handler
+app.setErrorHandler((error, request, reply) => {
+  console.error(error);
+  reply.status(500).send('Unexpected error');
 });
 
-app.listen(port);
-console.log(`Server running at http://localhost:${port}`);
+try {
+  await app.listen({ port, host: '0.0.0.0' });
+  console.log(`Server running at http://localhost:${port}`);
+} catch (err) {
+  console.error(err);
+  process.exit(1);
+}
