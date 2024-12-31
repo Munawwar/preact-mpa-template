@@ -5,6 +5,7 @@ import { parseArgs } from 'node:util';
 import pathModule from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
+import fs, { promises as fsPromises } from 'node:fs';
 import rimraf from 'rimraf';
 import {
   root,
@@ -14,7 +15,6 @@ import {
   publicDirectory,
   ssrDirectory
 } from './server/paths.js';
-import fs, { promises as fsPromises } from 'node:fs';
 
 const {
   values: {
@@ -143,7 +143,7 @@ if (watch) {
       ctx1.rebuild(),
       ctx2.rebuild()
     ]);
-    console.log(`rebuilt in ${(performance.now() - startTime).toFixed(2)} ms`);
+    console.debug(`rebuilt in ${(performance.now() - startTime).toFixed(2)} ms`);
 
     // Give some time for chokidar to figure out overwritten changes
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -172,6 +172,22 @@ if (watch) {
       }
     });
     const wss = new WebSocketServer({ server: httpServer });
+
+    const sendBrowserReload = () => {
+      console.debug('Send browser reload event');
+      wss.clients.forEach(client => {
+        client.send(JSON.stringify({ type: 'reload' }));
+      });
+    };
+
+    wss.on('connection', (ws) => {
+      ws.on('message', (data) => {
+        const message = JSON.parse(data);
+        if (message.type === 'server-reloaded') {
+          sendBrowserReload();
+        }
+      });
+    });
 
     const metafilePath = `${publicDirectory}metafile.json`;
     const bufferChangedFiles = (path) => {
@@ -293,12 +309,10 @@ if (watch) {
         ...Object.keys(changes.replace)
       ].some((url) => !url.endsWith('.css'));
       if (reload) {
-        console.log('reloading');
-        wss.clients.forEach(client => {
-          client.send(JSON.stringify({ type: 'reload' }));
-        });
+        sendBrowserReload();
         // Adds don't need to be sent to the client, until a JS file change is made (which causes a page reload)
       } else if (remove.length || replace.length) {
+        console.debug('Send CSS reload event to browser');
         wss.clients.forEach(client => {
           client.send(JSON.stringify({
             type: 'css',

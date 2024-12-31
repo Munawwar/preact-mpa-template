@@ -19,7 +19,7 @@ function Page({ pageContext }) {
 
 // Client side hydration
 if (typeof window !== 'undefined') {
-  const body = document.querySelector('body');
+  const body = document.querySelector('#root');
   hydrate(<Page pageContext={window.pageContext} />, body);
 }
 

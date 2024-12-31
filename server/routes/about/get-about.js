@@ -32,7 +32,7 @@ export default async (request, reply) => {
         <script type="module" src="${js}"></script>
         ${liveReloadScript ? /* html */`<script src="${liveReloadScript}"></script>` : ''}
       </head>
-      <body>
+      <body id="root">
         ${pageHtml}
       </body>
     </html>

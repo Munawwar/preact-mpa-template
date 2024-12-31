@@ -6,8 +6,8 @@
   "module": "server/server.js",
   "scripts": {
     "dev": "mkdirp dist && concurrently -i -c \"auto\" \"npm:watch:server\" \"npm:watch:build\"",
-    "watch:server": "nodemon --enable-source-maps --experimental-loader hot-esm --watch nothing/ --watch build.js server/server.js",
-    "watch:build": "nodemon --watch build.js -x \"node build.js --dev --watch --livereload\"",
+    "watch:server": "nodemon --enable-source-maps --import dynohot --watch server/routes/routes.js --watch server/paths.js --watch server/server.js server/server.js",
+    "watch:build": "nodemon --watch build.js --watch server/paths.js --exec \"node build.js --dev --watch --livereload\"",
     "prod-debug": "node --enable-source-maps server/server.js",
     "build": "node build.js",
     "lint": "eslint --ext js,jsx build.js server/ client/",
@@ -32,6 +32,7 @@
   "devDependencies": {
     "chokidar": "^4.0.3",
     "concurrently": "^7.6.0",
+    "dynohot": "^1.2.1",
     "esbuild": "^0.24.2",
     "eslint": "^8.32.0",
     "eslint-config-preact": "^1.3.0",
@@ -40,9 +41,8 @@
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-n": "^15.6.1",
     "eslint-plugin-promise": "^6.1.1",
-    "hot-esm": "^1.6.0",
     "mkdirp": "^3.0.1",
-    "nodemon": "^2.0.20",
+    "nodemon": "^3.1.9",
     "rimraf": "^4.1.2",
     "tiny-glob": "^0.2.9",
     "ws": "^8.18.0"
