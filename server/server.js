@@ -5,6 +5,8 @@ import routes from './routes/routes.js';
 import {
   publicURLPath,
   publicDirectory,
+  assetsURLPath,
+  assetsDirectory,
   serverDefaultPort,
   livereloadServerPort
 } from './paths.js';
@@ -16,6 +18,11 @@ await app.register(fastifyCompress);
 await app.register(fastifyStatic, {
   root: publicDirectory,
   prefix: publicURLPath
+});
+await app.register(fastifyStatic, {
+  root: assetsDirectory,
+  prefix: assetsURLPath,
+  decorateReply: false // the reply decorator has been added by the first plugin registration
 });
 
 // Declare routes

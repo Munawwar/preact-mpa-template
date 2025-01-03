@@ -8,7 +8,9 @@ const publicDirectoryRelative = 'dist/public/';
 const publicDirectory = `${root}/${publicDirectoryRelative}`;
 const ssrDirectoryRelative = 'dist/ssr/';
 const ssrDirectory = `${root}/${ssrDirectoryRelative}`;
+const assetsDirectory = `${root}/assets/`;
 const publicURLPath = '/public';
+const assetsURLPath = '/assets';
 const serverDefaultPort = 5132;
 const livereloadServerPort = 35729;
 
@@ -21,6 +23,8 @@ export {
   publicDirectoryRelative,
   ssrDirectory,
   ssrDirectoryRelative,
+  assetsDirectory,
+  assetsURLPath,
   serverDefaultPort,
   livereloadServerPort
 };

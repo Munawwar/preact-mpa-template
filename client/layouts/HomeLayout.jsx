@@ -8,7 +8,7 @@ const HomeLayout = function ({ children, pageContext }) {
     <PageContextProvider pageContext={pageContext}>
       <Layout>
         <Sidebar>
-          <Logo />
+          <Logo urlPathname={pageContext?.urlPathname} />
           <Link className="navitem" href="/">
             Home
           </Link>
@@ -69,7 +69,7 @@ const Content = function ({ children }) {
   );
 };
 
-function Logo() {
+function Logo({ urlPathname }) {
   return (
     <div
       style={{
@@ -77,7 +77,7 @@ function Logo() {
         marginBottom: 10
       }}
     >
-      <a href="/">
+      <a href="/" data-no-instant={urlPathname === '/'}>
         <img src={logo} height={64} width={64} alt="logo" />
       </a>
     </div>
