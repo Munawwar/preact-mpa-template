@@ -17,11 +17,15 @@ const app = fastify();
 await app.register(fastifyCompress);
 await app.register(fastifyStatic, {
   root: publicDirectory,
-  prefix: publicURLPath
+  prefix: publicURLPath,
+  immutable: true,
+  maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
 });
 await app.register(fastifyStatic, {
   root: assetsDirectory,
   prefix: assetsURLPath,
+  immutable: true,
+  maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
   decorateReply: false // the reply decorator has been added by the first plugin registration
 });
 
