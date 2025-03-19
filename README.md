@@ -4,7 +4,7 @@ Example repo to start a multi-page app/website (MPA) with Preact, fastify and es
 
 - <span aria-hidden>🐢</span> JS, CSS, image files are content hashed ("fingerprinted") on prod for long lived caching
 - <span aria-hidden>🤵‍♂️</span> Fastify server (More performant than Express, can add HTTP/2 support)
-- <span aria-hidden>🔄</span> Live reload
+- <span aria-hidden>🔄</span> Live reload¹
 - <span aria-hidden>✂️</span> Shared code chunks / Code splitting (read esbuild docs for caveats)
 - <span aria-hidden>🚀</span> Preload shared chunks
 - <span aria-hidden>🗲</span> Preloads pages on mouse hover / touch start (using [instant.page](https://instant.page/))
@@ -22,6 +22,14 @@ node server/server.js
 ```
 
 VSCode note: Install [es6-string-html](https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html) extension to syntax highlight HTML inside of JS template literals.
+
+¹ Live Reload here means:
+- Changes to client JS are automatically refreshed via a full page reload
+- Changes to CSS are reflected on page without page reload
+- Changes to node.js server routes are hot reloaded
+- Route handlers are also lazy loaded, to not only get the hot reloading to work, but also:
+  1. to keep dev server restarts fast (restart are needed when editing common server code outside routes)
+  2. to keep cold start time low, if you plan to deploy this to serverless environments like GCP Cloud Run
 
 ## Structure
 
