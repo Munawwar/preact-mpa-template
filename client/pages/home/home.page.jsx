@@ -13,6 +13,7 @@ function Page({ pageContext }) {
           Interactive. <Counter initialState={pageContext.counter} />
         </li>
       </ul>
+      <div class="banner" dangerouslySetInnerHTML={{ __html: pageContext.banner }} />
     </HomeLayout>
   );
 }

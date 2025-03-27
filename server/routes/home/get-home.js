@@ -20,7 +20,15 @@ export default async (request, reply) => {
   } = await getPage('home', request.hostname);
 
   const { pathname: urlPathname } = new URL(request.url, 'http://localhost');
-  const pageContext = { counter: 10, urlPathname }; // assume data is from a database.
+  const pageContext = {
+    counter: 10,
+    urlPathname,
+    // assume text is from a database. This can be fetched in parallel with the `getPage` call.
+    banner: /* html */`<p>
+      Here's a server component without the complexity.<br>
+      You don't need to render this with preact even. Use tagged template literals.
+    </p>`
+  };
   // So you cannot assume this data is free from XSS attempts
   const pageHtml = pageToHtml(pageContext, renderToString);
   const html = /* html */`
