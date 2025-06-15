@@ -6,7 +6,6 @@ import pathModule from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import fs, { promises as fsPromises } from 'node:fs';
-import rimraf from 'rimraf';
 import {
   root,
   publicDirectoryRelative,
@@ -42,7 +41,7 @@ const {
 const [entryPoints] = await Promise.all([
   glob('./client/pages/**/*.page.jsx'),
   // clean current dist/
-  rimraf('dist/')
+  fsPromises.rm('dist/', { recursive: true, force: true })
 ]);
 // console.log('entryPoints', entryPoints);
 
