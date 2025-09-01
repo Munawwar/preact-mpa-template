@@ -13,11 +13,9 @@ export default async (request, reply) => {
   // Find the built code of client/pages/home/home.page.jsx
   const {
     js,
-    preloadJs,
     css,
-    exports: { pageToHtml },
-    liveReloadScript
-  } = await getPage('home', request.hostname);
+    exports: { pageToHtml }
+  } = await getPage('home');
 
   const { pathname: urlPathname } = new URL(request.url, 'http://localhost');
   const pageContext = { counter: 10, urlPathname }; // assume data is from a database.
@@ -27,16 +25,10 @@ export default async (request, reply) => {
     <!DOCTYPE html>
     <html>
       <head>
-        <link rel="stylesheet" href="${css}">
-        ${preloadJs.map((js) => /* html */`<link rel="modulepreload" href="${js}">`).join('\n')}
+        ${css.map((css) => /* html */`<link rel="stylesheet" href="${css}">`).join('\n')}
         <script>window.pageContext=${stringify(pageContext)};</script>
-        <script type="module" src="${js}"></script>
-        ${liveReloadScript ? /* html */`<script src="${liveReloadScript}"></script>` : ''}
-        <script
-          src="${assetsURLPath}/instant.page-5.2.0.js"
-          type="module"
-          fetchpriority="low"
-        ></script>
+        ${js.map((js) => /* html */`<script type="module" src="${js}"></script>`).join('\n')}
+        <script type="module" src="${assetsURLPath}/instant.page-5.2.0.js" fetchpriority="low"></script>
       </head>
       <body id="root">
         ${pageHtml}

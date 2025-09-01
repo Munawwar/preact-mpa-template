@@ -1,26 +1,50 @@
 import fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyCompress from '@fastify/compress';
+import fastifyMiddie from '@fastify/middie';
 import routes from './routes/routes.js';
+
 import {
   publicURLPath,
   publicDirectory,
   assetsURLPath,
   assetsDirectory,
-  serverDefaultPort,
-  livereloadServerPort
+  serverDefaultPort
 } from './paths.js';
+
+const isDev = process.env.NODE_ENV !== 'production';
 const port = process.env.PORT || serverDefaultPort;
 
 const app = fastify();
 
 await app.register(fastifyCompress);
-await app.register(fastifyStatic, {
-  root: publicDirectory,
-  prefix: publicURLPath,
-  immutable: true,
-  maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
-});
+
+// Set up rsbuild dev middleware in development mode
+let rsbuildServer = null;
+if (isDev) {
+  const { createRsbuild } = await import('@rsbuild/core');
+
+  // Import the rsbuild config
+  const { default: rsbuildConfig } = await import('../rsbuild.config.js');
+
+  // Create rsbuild instance in middleware mode
+  const rsbuild = await createRsbuild({ rsbuildConfig });
+
+  rsbuildServer = await rsbuild.createDevServer();
+
+  // Register middleware support for Fastify
+  await app.register(fastifyMiddie);
+
+  // Apply rsbuild middleware
+  app.use(rsbuildServer.middlewares);
+} else {
+  await app.register(fastifyStatic, {
+    root: publicDirectory,
+    prefix: publicURLPath,
+    immutable: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+  });
+}
 await app.register(fastifyStatic, {
   root: assetsDirectory,
   prefix: assetsURLPath,
@@ -66,56 +90,21 @@ app.setErrorHandler((error, request, reply) => {
 });
 
 try {
-  await app.listen({ port, host: '0.0.0.0' }, async () => {
-    // Hot module reloading if available (on dev, with dynohot)
-    if (import.meta.hot) {
-      const { WebSocket } = await import('ws');
-      const maxRetries = 100;
-      const retryDelay = 1000;
-
-      let browserReloadServerWs = null;
-
-      import.meta.hot.on("message", () => {
-        browserReloadServerWs?.send(JSON.stringify({ type: 'server-reloaded' }));
-      });
-
-      (async function connectWebSocket(retryCount = 0) {
-        let ws;
-        try {
-          ws = new WebSocket(`ws://localhost:${livereloadServerPort}`);
-
-          ws.on('open', () => {
-            browserReloadServerWs = ws;
-            retryCount = 0;
-            browserReloadServerWs.send(JSON.stringify({ type: 'server-reloaded' }));
-          });
-
-          let errorMessage = null;
-          ws.on('close', async () => {
-            browserReloadServerWs = null;
-            if (retryCount < maxRetries) {
-              console.warn(`Browser reload server disconnected${errorMessage ? ` (${errorMessage})` : ''}. Retrying (${retryCount + 1}/${maxRetries})...`);
-              await new Promise(resolve => setTimeout(resolve, retryDelay));
-              connectWebSocket(retryCount + 1);
-            } else {
-              console.warn(`'Browser reload server disconnected${errorMessage ? ` (${errorMessage})` : ''}. Retries exhausted.`);
-            }
-            errorMessage = null;
-          });
-
-          ws.on('error', (error) => {
-            browserReloadServerWs = null;
-            errorMessage = error.message;
-            ws.close();
-          });
-        } catch (error) {
-          ws.close();
-          browserReloadServerWs = null;
-        }
-      })();
-    }
-  });
+  await app.listen({ port });
   console.log(`Server running at http://localhost:${port}`);
+
+  // Complete rsbuild integration following official docs
+  if (isDev && rsbuildServer) {
+    // Notify Rsbuild that the custom server has started
+    await rsbuildServer.afterListen();
+
+    // Activate WebSocket connection for HMR
+    rsbuildServer.connectWebSocket({ server: app.server });
+
+    console.log('🔥 HMR enabled via rsbuild middleware');
+  }
+
+  // Keep dynohot for server-side hot reloading
 } catch (err) {
   console.error(err);
   process.exit(1);
