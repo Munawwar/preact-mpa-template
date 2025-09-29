@@ -7,7 +7,7 @@ Example repo to start a multi-page app/website (MPA) with Preact, fastify and es
 - <span aria-hidden>🔄</span> Live reload¹
 - <span aria-hidden>✂️</span> Shared code chunks / Code splitting (read esbuild docs for caveats)
 - <span aria-hidden>🚀</span> Preload shared chunks
-- <span aria-hidden>🗲</span> Preloads pages on mouse hover / touch start (using [instant.page](https://instant.page/))
+- <span aria-hidden>🗲</span> Preloads pages on mouse hover / touch start (using [instant.page](https://instant.page/)²)
 - <span aria-hidden>🌐</span> Static files deployable to S3 behind a CDN
 
 ```sh
@@ -30,6 +30,8 @@ VSCode note: Install [es6-string-html](https://marketplace.visualstudio.com/item
 - Route handlers are also lazy loaded, to not only get the hot reloading to work, but also:
   1. to keep dev server restarts fast (restart are needed when editing common server code outside routes)
   2. to keep cold start time low, if you plan to deploy this to serverless environments like GCP Cloud Run
+
+² the hosted version of instant.page doesn't have prerender option, so I had to minify myself
 
 ## Structure
 
