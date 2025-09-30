@@ -15,6 +15,8 @@ import {
   ssrDirectory
 } from './server/paths.js';
 
+process.title = 'preact-mpa-template-build';
+
 const {
   values: {
     dev: isDevMode,

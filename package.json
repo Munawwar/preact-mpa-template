@@ -9,6 +9,7 @@
     "watch:server": "nodemon --enable-source-maps --import dynohot --watch server/routes/routes.js --watch server/paths.js --watch server/server.js server/server.js",
     "watch:build": "nodemon --watch build.js --watch server/paths.js --exec \"node build.js --dev --watch --livereload\"",
     "prod-debug": "node --enable-source-maps server/server.js",
+    "start": "NODE_ENV=production node server/server.js",
     "build": "node build.js",
     "lint": "eslint --ext js,jsx build.js server/ client/",
     "lint:fix": "eslint --fix --ext js,jsx build.js server/ client/"

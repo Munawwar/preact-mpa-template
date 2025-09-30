@@ -12,6 +12,8 @@ import {
 } from './paths.js';
 const port = process.env.PORT || serverDefaultPort;
 
+process.title = 'preact-mpa-template';
+
 const app = fastify();
 
 await app.register(fastifyCompress);
