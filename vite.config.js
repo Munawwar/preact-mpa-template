@@ -1,36 +1,22 @@
 import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
 import { resolve, join } from 'node:path';
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync, copyFileSync } from 'node:fs';
+import { publicURLPath } from './server/paths';
 
-// Find all HTML entry files in client/pages/*/*.html
-function findHtmlEntries() {
-  const pagesDir = resolve(__dirname, 'client/pages');
-  const entries = {};
-
-  try {
-    const pageNames = readdirSync(pagesDir);
-
-    for (const pageName of pageNames) {
-      const pagePath = join(pagesDir, pageName);
-      if (statSync(pagePath).isDirectory()) {
-        const htmlFile = join(pagePath, `${pageName}.html`);
-        try {
-          statSync(htmlFile);
-          entries[pageName] = resolve(__dirname, htmlFile);
-        } catch (err) {
-          // HTML file doesn't exist for this page yet
-        }
-      }
+// Plugin to copy template.html to dist
+function copyTemplatePlugin() {
+  return {
+    name: 'copy-template',
+    closeBundle() {
+      const src = resolve(__dirname, 'client/template.html');
+      const dest = resolve(__dirname, 'dist/client/template.html');
+      copyFileSync(src, dest);
     }
-  } catch (err) {
-    console.warn('Could not read pages directory:', err.message);
-  }
-
-  return entries;
+  };
 }
 
-// Find all .page.jsx files for SSR build
+// Find all .page.jsx files for client and SSR builds
 function findPageEntries() {
   const pagesDir = resolve(__dirname, 'client/pages');
   const entries = {};
@@ -60,11 +46,26 @@ function findPageEntries() {
 export default defineConfig(({ mode, isSsrBuild }) => {
   const isProduction = mode === 'production';
 
+  // Common configuration shared between client and SSR builds
+  const commonConfig = {
+    plugins: [preact()],
+    // Public base path - all assets will be served from /public/
+    base: publicURLPath,
+    resolve: {
+      extensions: ['.mjs', '.js', '.jsx', '.json']
+    },
+    build: {
+      assetsInlineLimit: 0, // Don't inline assets as data URIs
+      sourcemap: !isProduction
+    }
+  };
+
   // SSR build configuration
   if (isSsrBuild) {
     return {
-      plugins: [preact()],
+      ...commonConfig,
       build: {
+        ...commonConfig.build,
         ssr: true,
         outDir: 'dist/server',
         emptyOutDir: true,
@@ -74,34 +75,36 @@ export default defineConfig(({ mode, isSsrBuild }) => {
             entryFileNames: '[name].js',
             format: 'es'
           }
-        },
-        sourcemap: !isProduction
+        }
       },
       ssr: {
         external: ['preact', 'preact-render-to-string'],
         noExternal: []
-      },
-      resolve: {
-        extensions: ['.mjs', '.js', '.jsx', '.json']
       }
     };
   }
 
   // Client build configuration
   return {
-    plugins: [preact()],
+    ...commonConfig,
+    plugins: [preact(), copyTemplatePlugin()],
 
     // Public directory - files copied to dist/client root
     publicDir: 'public',
 
     build: {
+      ...commonConfig.build,
       outDir: 'dist/client',
       emptyOutDir: true,
       manifest: true,
       rollupOptions: {
-        input: findHtmlEntries()
-      },
-      sourcemap: !isProduction
+        input: findPageEntries(),
+        output: {
+          entryFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]'
+        }
+      }
     },
 
     // Development server configuration
@@ -111,13 +114,5 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         port: 24678
       }
     },
-
-    // Resolve configuration
-    resolve: {
-      extensions: ['.mjs', '.js', '.jsx', '.json']
-    },
-
-    // Public base path - all assets will be served from /public/
-    base: '/public/'
   };
 });
