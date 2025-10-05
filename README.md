@@ -43,7 +43,7 @@ Entry files to a page should placed in `client/pages/{name}/{name}.page.jsx`.
 You will have to do at least a couple of things to production-ize this template:
 1. You may not want to have a single preact context for the entire website. Each page having a separate context might be better.
 2. Add [HTTP/2](https://fastify.dev/docs/latest/Reference/HTTP2/) support.
-3. Use a CDN for URL paths `/public/*` and `/assets/*` (on the same domain as the fastify server). Remove fastify compression and enable dynamic compression on the CDN. Optionally upload files from `dist/public` and `assets` directories to a file storage origin (like AWS S3) so that your main server doesn't have to serve static files (especially if your server is not auto-scaling or is constrained by bandwidth).
+3. Use a CDN for URL paths `/public/*` (on the same domain as the fastify server). Remove fastify compression and enable dynamic compression on the CDN. Optionally upload files from `public/` directories to a file storage origin (like AWS S3) so that your main server doesn't have to serve static files (especially if your server is not auto-scaling or is constrained by bandwidth).
 4. You might want a CSS solution like CSS modules or utility CSS (look into esbuild plugins for these)
 
 ## Credits

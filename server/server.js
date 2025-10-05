@@ -5,8 +5,6 @@ import routes from './routes/routes.js';
 import {
   publicURLPath,
   publicDirectory,
-  assetsURLPath,
-  assetsDirectory,
   serverDefaultPort,
   livereloadServerPort
 } from './paths.js';
@@ -22,13 +20,6 @@ await app.register(fastifyStatic, {
   prefix: publicURLPath,
   immutable: true,
   maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
-});
-await app.register(fastifyStatic, {
-  root: assetsDirectory,
-  prefix: assetsURLPath,
-  immutable: true,
-  maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-  decorateReply: false // the reply decorator has been added by the first plugin registration
 });
 
 // Declare routes

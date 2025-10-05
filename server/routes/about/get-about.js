@@ -3,7 +3,7 @@ import { stringify } from "html-safe-json";
 // You cannot use JSON.stringify directly while interpolating string into a <script>
 // tag, because it won't escape stuff like </script> tags and can lead to XSS attacks
 import getPage from "../../getPage.js";
-import { assetsURLPath } from '../../paths.js';
+import { publicURLPath } from '../../paths.js';
 
 /**
  * @param {import('fastify').FastifyRequest} request
@@ -32,7 +32,7 @@ export default async (request, reply) => {
         <script>window.pageContext=${stringify(pageContext)};</script>
         <script type="module" src="${js}"></script>
         <script
-          src="${assetsURLPath}/instant.page-5.2.0.js"
+          src="${publicURLPath}/instant.page-5.2.0.js"
           type="module"
           fetchpriority="low"
         ></script>

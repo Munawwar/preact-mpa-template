@@ -8,8 +8,8 @@ import { performance } from 'node:perf_hooks';
 import fs, { promises as fsPromises } from 'node:fs';
 import {
   root,
-  publicDirectoryRelative,
   ssrDirectoryRelative,
+  publicBuildDirectory,
   publicURLPath,
   publicDirectory,
   ssrDirectory
@@ -43,7 +43,8 @@ const {
 const [entryPoints] = await Promise.all([
   glob('./client/pages/**/*.page.jsx'),
   // clean current dist/
-  fsPromises.rm('dist/', { recursive: true, force: true })
+  fsPromises.rm(ssrDirectoryRelative, { recursive: true, force: true }),
+  fsPromises.rm(publicBuildDirectory, { recursive: true, force: true })
 ]);
 // console.log('entryPoints', entryPoints);
 
@@ -74,7 +75,7 @@ const commonConfig = {
 // you would cause two preact copies (one in the bundled JS and one from preact-render-to-string)
 // Also note, using hashed SSR files just like client build, so that server can dynamic import() changes without restarting full server
 const publicBuildConfig = {
-  outdir: publicDirectoryRelative,
+  outdir: publicBuildDirectory,
   splitting: true,
   minify: true,
   sourcemap: true,
