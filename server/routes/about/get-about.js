@@ -2,7 +2,7 @@ import { renderToString } from "preact-render-to-string";
 import { stringify } from "html-safe-json";
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { root, publicURLPath } from '../../paths.js';
+import { root } from '../../paths.js';
 import { getDevServer } from '../../vite-dev-server.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -39,7 +39,7 @@ export default async (request, reply) => {
     let html;
     if (isProduction) {
       html = await fs.readFile(
-        path.join(root, `dist/client/${pageName}.html`),
+        path.join(root, `dist/client/client/pages/${pageName}/${pageName}.html`),
         'utf-8'
       );
     } else {
@@ -53,7 +53,7 @@ export default async (request, reply) => {
     const dynamicHead = `
     <script>window.pageContext=${stringify(pageContext)};</script>
     <script
-      src="${publicURLPath}instant.page-5.2.0.js"
+      src="/instant.page-5.2.0.js"
       type="module"
       fetchpriority="low"
     ></script>`;
