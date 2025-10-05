@@ -1,5 +1,5 @@
 .DS_Store
 __ignore__
 node_modules/
-dist-ssr/
-public/dist/
+dist/
+.vite/

@@ -1,48 +1,71 @@
 import { renderToString } from "preact-render-to-string";
 import { stringify } from "html-safe-json";
-// You cannot use JSON.stringify directly while interpolating string into a <script>
-// tag, because it won't escape stuff like </script> tags and can lead to XSS attacks
-import getPage from "../../getPage.js";
-import { publicURLPath } from '../../paths.js';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { root, publicURLPath } from '../../paths.js';
+import { getDevServer } from '../../vite-dev-server.js';
+
+const isProduction = process.env.NODE_ENV === 'production';
+const pageName = 'home';
 
 /**
  * @param {import('fastify').FastifyRequest} request
  * @param {import('fastify').FastifyReply} reply
  */
 export default async (request, reply) => {
-  // Find the built code of client/pages/home/home.page.jsx
-  const {
-    js,
-    preloadJs,
-    css,
-    exports: { pageToHtml },
-    liveReloadScript
-  } = await getPage('home', request.hostname);
-
   const { pathname: urlPathname } = new URL(request.url, 'http://localhost');
-  const pageContext = { counter: 10, urlPathname }; // assume data is from a database.
-  // So you cannot assume this data is free from XSS attempts
-  const pageHtml = pageToHtml(pageContext, renderToString);
-  const html = /* html */`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <link rel="stylesheet" href="${css}">
-        ${preloadJs.map((js) => /* html */`<link rel="modulepreload" href="${js}">`).join('\n')}
-        <script>window.pageContext=${stringify(pageContext)};</script>
-        <script type="module" src="${js}"></script>
-        <script
-          src="${publicURLPath}/instant.page-5.2.0.js"
-          type="module"
-          fetchpriority="low"
-        ></script>
-        ${liveReloadScript ? /* html */`<script src="${liveReloadScript}"></script>` : ''}
-      </head>
-      <body id="root" data-instant-intensity="150" data-instant-specrules="prerender">
-        ${pageHtml}
-      </body>
-    </html>
-  `;
+  const pageContext = { counter: 10, urlPathname };
 
-  return reply.status(200).header('Content-Type', 'text/html').send(html);
+  try {
+    // Load and render page component
+    let pageModule;
+    let pageHtml;
+
+    if (isProduction) {
+      // Production: Import SSR build
+      const ssrModulePath = path.join(root, `dist/server/pages/${pageName}/${pageName}.page.js`);
+      pageModule = await import(ssrModulePath);
+      pageHtml = pageModule.pageToHtml(pageContext, renderToString);
+    } else {
+      // Development: Use Vite SSR
+      const viteDevServer = getDevServer();
+      pageModule = await viteDevServer.ssrLoadModule(
+        `/client/pages/${pageName}/${pageName}.page.jsx`
+      );
+      pageHtml = pageModule.pageToHtml(pageContext, renderToString);
+    }
+
+    // Load HTML template
+    let html;
+    if (isProduction) {
+      html = await fs.readFile(
+        path.join(root, `dist/client/${pageName}.html`),
+        'utf-8'
+      );
+    } else {
+      const viteDevServer = getDevServer();
+      const htmlPath = path.join(root, `client/pages/${pageName}/${pageName}.html`);
+      html = await fs.readFile(htmlPath, 'utf-8');
+      html = await viteDevServer.transformIndexHtml(urlPathname, html);
+    }
+
+    // Inject dynamic head content
+    const dynamicHead = `
+    <script>window.pageContext=${stringify(pageContext)};</script>
+    <script
+      src="${publicURLPath}instant.page-5.2.0.js"
+      type="module"
+      fetchpriority="low"
+    ></script>`;
+
+    // Inject SSR content and dynamic head
+    const finalHtml = html
+      .replace('<!--app-head-->', dynamicHead)
+      .replace('<!--app-html-->', pageHtml);
+
+    return reply.status(200).header('Content-Type', 'text/html').send(finalHtml);
+  } catch (error) {
+    console.error('Error rendering home page:', error);
+    throw error;
+  }
 };

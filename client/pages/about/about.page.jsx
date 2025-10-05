@@ -13,10 +13,15 @@ function Page({ pageContext }) {
   );
 }
 
-// Client side hydration
-if (typeof window !== 'undefined') {
+// Client side hydration (only runs in browser, not during SSR)
+if (!import.meta.env.SSR) {
   const body = document.querySelector('#root');
   hydrate(<Page pageContext={window.pageContext} />, body);
+
+  // Vite HMR
+  if (import.meta.hot) {
+    import.meta.hot.accept();
+  }
 }
 
 // Server render helper

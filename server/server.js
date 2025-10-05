@@ -1,26 +1,44 @@
 import fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyCompress from '@fastify/compress';
+import middie from '@fastify/middie';
 import routes from './routes/routes.js';
 import {
   publicURLPath,
-  publicDirectory,
-  serverDefaultPort,
-  livereloadServerPort
+  clientBuildDirectory,
+  serverDefaultPort
 } from './paths.js';
+
 const port = process.env.PORT || serverDefaultPort;
+const isProduction = process.env.NODE_ENV === 'production';
 
 process.title = 'preact-mpa-template';
 
 const app = fastify();
 
+// Initialize Vite dev server in development mode
+let viteDevServer = null;
+if (!isProduction) {
+  const { createDevServer } = await import('./vite-dev-server.js');
+  viteDevServer = await createDevServer();
+
+  // Register middie to use Connect/Express middleware with Fastify
+  await app.register(middie);
+
+  // Use Vite's middleware for dev assets
+  app.use(viteDevServer.middlewares);
+}
+
+// Serve static files (production build or public assets)
 await app.register(fastifyCompress);
-await app.register(fastifyStatic, {
-  root: publicDirectory,
-  prefix: publicURLPath,
-  immutable: true,
-  maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
-});
+if (isProduction) {
+  await app.register(fastifyStatic, {
+    root: clientBuildDirectory,
+    prefix: publicURLPath,
+    immutable: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+  });
+}
 
 // Declare routes
 await Promise.all(routes.map(async ({
@@ -59,56 +77,11 @@ app.setErrorHandler((error, request, reply) => {
 });
 
 try {
-  await app.listen({ port, host: '0.0.0.0' }, async () => {
-    // Hot module reloading if available (on dev, with dynohot)
-    if (import.meta.hot) {
-      const { WebSocket } = await import('ws');
-      const maxRetries = 100;
-      const retryDelay = 1000;
-
-      let browserReloadServerWs = null;
-
-      import.meta.hot.on("message", () => {
-        browserReloadServerWs?.send(JSON.stringify({ type: 'server-reloaded' }));
-      });
-
-      (async function connectWebSocket(retryCount = 0) {
-        let ws;
-        try {
-          ws = new WebSocket(`ws://localhost:${livereloadServerPort}`);
-
-          ws.on('open', () => {
-            browserReloadServerWs = ws;
-            retryCount = 0;
-            browserReloadServerWs.send(JSON.stringify({ type: 'server-reloaded' }));
-          });
-
-          let errorMessage = null;
-          ws.on('close', async () => {
-            browserReloadServerWs = null;
-            if (retryCount < maxRetries) {
-              console.warn(`Browser reload server disconnected${errorMessage ? ` (${errorMessage})` : ''}. Retrying (${retryCount + 1}/${maxRetries})...`);
-              await new Promise(resolve => setTimeout(resolve, retryDelay));
-              connectWebSocket(retryCount + 1);
-            } else {
-              console.warn(`'Browser reload server disconnected${errorMessage ? ` (${errorMessage})` : ''}. Retries exhausted.`);
-            }
-            errorMessage = null;
-          });
-
-          ws.on('error', (error) => {
-            browserReloadServerWs = null;
-            errorMessage = error.message;
-            ws.close();
-          });
-        } catch (error) {
-          ws.close();
-          browserReloadServerWs = null;
-        }
-      })();
-    }
-  });
+  await app.listen({ port, host: '0.0.0.0' });
   console.log(`Server running at http://localhost:${port}`);
+  if (!isProduction) {
+    console.log(`Vite HMR ready`);
+  }
 } catch (err) {
   console.error(err);
   process.exit(1);

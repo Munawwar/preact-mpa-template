@@ -1,29 +1,30 @@
 {
   "name": "preact-mpa-template",
   "version": "0.0.1",
-  "description": "Preact multi-page app/website starter template (SSR) - with Fastify and esbuild",
+  "description": "Preact multi-page app/website starter template (SSR) - with Fastify and Vite",
   "type": "module",
   "module": "server/server.js",
   "scripts": {
-    "dev": "mkdirp dist && concurrently -i -c \"auto\" \"npm:watch:server\" \"npm:watch:build\"",
-    "watch:server": "nodemon --enable-source-maps --import dynohot --watch server/routes/routes.js --watch server/paths.js --watch server/server.js server/server.js",
-    "watch:build": "nodemon --watch build.js --watch server/paths.js --exec \"node build.js --dev --watch --livereload\"",
-    "prod-debug": "node --enable-source-maps server/server.js",
+    "dev": "nodemon --enable-source-maps --import dynohot --watch server/routes/routes.js --watch server/paths.js --watch server/server.js --watch vite.config.js server/server.js",
+    "watch:server": "nodemon --enable-source-maps --import dynohot --watch server/routes/routes.js --watch server/paths.js --watch server/server.js --watch vite.config.js server/server.js",
+    "prod-debug": "NODE_ENV=production node --enable-source-maps server/server.js",
     "start": "NODE_ENV=production node server/server.js",
-    "build": "node build.js",
-    "lint": "eslint --ext js,jsx build.js server/ client/",
-    "lint:fix": "eslint --fix --ext js,jsx build.js server/ client/"
+    "build": "vite build && vite build --ssr",
+    "lint": "eslint --ext js,jsx server/ client/",
+    "lint:fix": "eslint --fix --ext js,jsx server/ client/"
   },
   "keywords": [
     "preact",
     "MPA",
     "SSR",
-    "esbuild"
+    "vite",
+    "fastify"
   ],
   "author": "Munawwar",
   "license": "MIT",
   "dependencies": {
     "@fastify/compress": "^8.0.1",
+    "@fastify/middie": "^9.0.2",
     "@fastify/static": "^8.0.3",
     "fastify": "^5.2.0",
     "html-safe-json": "^2.0.3",
@@ -31,10 +32,9 @@
     "preact-render-to-string": "^5.2.6"
   },
   "devDependencies": {
-    "chokidar": "^4.0.3",
+    "@preact/preset-vite": "^2.9.1",
     "concurrently": "^7.6.0",
     "dynohot": "^1.2.1",
-    "esbuild": "^0.24.2",
     "eslint": "^8.32.0",
     "eslint-config-preact": "^1.3.0",
     "eslint-config-semistandard": "^17.0.0",
@@ -44,8 +44,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "mkdirp": "^3.0.1",
     "nodemon": "^3.1.9",
-    "tiny-glob": "^0.2.9",
-    "ws": "^8.18.0"
+    "vite": "^5.4.11"
   },
   "eslintConfig": {
     "ignorePatterns": "dist/",
