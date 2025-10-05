@@ -9,7 +9,7 @@
     "watch:server": "nodemon --enable-source-maps --import dynohot --watch server/routes/routes.js --watch server/paths.js --watch server/server.js --watch vite.config.js server/server.js",
     "prod-debug": "NODE_ENV=production node --enable-source-maps server/server.js",
     "start": "NODE_ENV=production node server/server.js",
-    "build": "vite build && vite build --ssr",
+    "build": "del-cli dist && NODE_ENV=production vite build && vite build --ssr",
     "lint": "eslint --ext js,jsx server/ client/",
     "lint:fix": "eslint --fix --ext js,jsx server/ client/"
   },
@@ -34,6 +34,7 @@
   "devDependencies": {
     "@preact/preset-vite": "^2.9.1",
     "concurrently": "^7.6.0",
+    "del-cli": "^7.0.0",
     "dynohot": "^1.2.1",
     "eslint": "^8.32.0",
     "eslint-config-preact": "^1.3.0",

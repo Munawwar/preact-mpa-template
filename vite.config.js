@@ -117,7 +117,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       extensions: ['.mjs', '.js', '.jsx', '.json']
     },
 
-    // Public base path
-    base: '/'
+    // Public base path - all assets will be served from /public/
+    base: '/public/'
   };
 });

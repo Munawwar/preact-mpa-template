@@ -15,7 +15,7 @@ const ssrBuildDirectory = `${root}/dist/server`;
 const ssrBuildDirectoryRelative = 'dist/server';
 
 // Public URL path for serving static assets
-const publicURLPath = '/';
+const publicURLPath = '/public';
 
 // Server configuration
 const serverDefaultPort = 5132;

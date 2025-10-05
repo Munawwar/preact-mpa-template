@@ -15,7 +15,8 @@ export async function createDevServer() {
           port: 24678
         }
       },
-      appType: 'custom'
+      appType: 'custom',
+      base: '/public/'
     });
   }
   return viteDevServer;

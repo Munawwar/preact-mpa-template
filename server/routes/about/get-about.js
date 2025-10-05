@@ -2,7 +2,7 @@ import { renderToString } from "preact-render-to-string";
 import { stringify } from "html-safe-json";
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { root } from '../../paths.js';
+import { root, publicURLPath } from '../../paths.js';
 import { getDevServer } from '../../vite-dev-server.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -51,12 +51,13 @@ export default async (request, reply) => {
 
     // Inject dynamic head content
     const dynamicHead = `
-    <script>window.pageContext=${stringify(pageContext)};</script>
-    <script
-      src="/instant.page-5.2.0.js"
-      type="module"
-      fetchpriority="low"
-    ></script>`;
+      <script>window.pageContext=${stringify(pageContext)};</script>
+      <script
+        src="${publicURLPath}/instant.page-5.2.0.js"
+        type="module"
+        fetchpriority="low"
+      ></script>
+    `;
 
     // Inject SSR content and dynamic head
     const finalHtml = html
