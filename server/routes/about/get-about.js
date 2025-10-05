@@ -51,13 +51,13 @@ export default async (request, reply) => {
 
     // Inject dynamic head content
     const dynamicHead = `
-      <script>window.pageContext=${stringify(pageContext)};</script>
-      <script
-        src="${publicURLPath}/instant.page-5.2.0.js"
-        type="module"
-        fetchpriority="low"
-      ></script>
-    `;
+    <script>window.pageContext=${stringify(pageContext)};</script>
+    <script
+      src="${publicURLPath}/instant.page-5.2.0.js"
+      type="module"
+      fetchpriority="low"
+    ></script>
+    `.trim();
 
     // Inject SSR content and dynamic head
     const finalHtml = html

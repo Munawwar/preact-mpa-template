@@ -45,7 +45,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "mkdirp": "^3.0.1",
     "nodemon": "^3.1.9",
-    "vite": "^5.4.11"
+    "vite": "^7.0.0"
   },
   "eslintConfig": {
     "ignorePatterns": "dist/",
