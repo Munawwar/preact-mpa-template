@@ -13,4 +13,4 @@ function Page({ pageContext }) {
   );
 }
 
-export const { pageToHtml, unmount } = initializePage(Page);
+export const { pageToHtml } = initializePage(Page);
