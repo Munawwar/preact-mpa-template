@@ -31,11 +31,7 @@ export default async (request, reply) => {
         ${preloadJs.map((js) => /* html */`<link rel="modulepreload" href="${js}">`).join('\n')}
         <script>window.pageContext=${stringify(pageContext)};</script>
         <script type="module" src="${js}"></script>
-        <script
-          src="${publicURLPath}/instant.page-5.2.0.js"
-          type="module"
-          fetchpriority="low"
-        ></script>
+        <script src="${publicURLPath}/instant.page-5.2.0.js" type="module" fetchpriority="low"></script>
         ${liveReloadScript ? /* html */`<script src="${liveReloadScript}"></script>` : ''}
       </head>
       <body id="root" data-instant-intensity="150" data-instant-specrules="prerender">

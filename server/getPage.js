@@ -1,15 +1,16 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';
 import {
-  __dirname,
   root,
-  publicDirectory,
-  publicURLPath,
-  ssrDirectory,
-  publicDirectoryRelative
+  publicBuildURLPath,
+  publicBuildDirectory,
+  publicBuildDirectoryRelative,
+  ssrDirectory
 } from './paths.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function getPaths(pageName) {
   return {
@@ -53,7 +54,7 @@ async function getPage(pageName, hostname) {
   if (!manifests) {
     const [publicMetafileString, ssrMetafileString] = await Promise.all([
       fs.readFile(
-        path.resolve(publicDirectory, 'metafile.json'),
+        path.resolve(publicBuildDirectory, 'metafile.json'),
         'utf-8'
       ),
       fs.readFile(
@@ -91,7 +92,7 @@ async function getPage(pageName, hostname) {
   const { jsFile, cssFile } = manifests.public[filePaths.jsFile] || {};
   const preloadJs = (metafiles.public.outputs[jsFile].imports || [])
     .filter(({ kind }) => kind === 'import-statement')
-    .map(({ path: filePath }) => path.resolve(publicURLPath, path.relative(publicDirectoryRelative, filePath)));
+    .map(({ path: filePath }) => path.resolve(publicBuildURLPath, path.relative(publicBuildDirectoryRelative, filePath)));
   const { jsFile: ssrJSFile } = manifests.ssr[filePaths.jsFile] || {};
   const exports = await import(getRelativePathToSSRDist(ssrJSFile));
   const liveReloadScript = isProduction
@@ -99,9 +100,9 @@ async function getPage(pageName, hostname) {
     : `http://${hostname.split(':')[0]}:35729/livereload-client.js`;
 
   return {
-    js: `${publicURLPath}/${path.relative(publicDirectory, jsFile)}`,
+    js: `${publicBuildURLPath}/${path.relative(publicBuildDirectoryRelative, jsFile)}`,
     preloadJs,
-    css: `${publicURLPath}/${path.relative(publicDirectory, cssFile)}`,
+    css: `${publicBuildURLPath}/${path.relative(publicBuildDirectoryRelative, cssFile)}`,
     exports,
     liveReloadScript
   };

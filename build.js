@@ -11,6 +11,7 @@ import {
   ssrDirectoryRelative,
   publicBuildDirectory,
   publicURLPath,
+  publicBuildURLPath,
   publicDirectory,
   ssrDirectory
 } from './server/paths.js';
@@ -52,7 +53,7 @@ const commonConfig = {
   entryPoints,
   entryNames: '[dir]/[name]-[hash]',
   outbase: 'client/',
-  publicPath: publicURLPath,
+  publicPath: publicBuildURLPath,
   format: 'esm',
   bundle: true,
   metafile: true,
@@ -104,7 +105,7 @@ const [publicBuildResult, ssrBuildResult] = await Promise.all([
 async function writeMetafile(publicBuildResult, ssrBuildResult) {
   if (publicBuildResult && publicBuildResult.metafile) {
     await Promise.all([
-      fsPromises.writeFile(`${publicDirectory}/metafile.json`, JSON.stringify(publicBuildResult.metafile, 0, 2)),
+      fsPromises.writeFile(`${publicBuildDirectory}/metafile.json`, JSON.stringify(publicBuildResult.metafile, 0, 2)),
       fsPromises.writeFile(`${ssrDirectory}/metafile.json`, JSON.stringify(ssrBuildResult.metafile, 0, 2))
     ]);
   }
@@ -191,7 +192,7 @@ if (watch) {
       });
     });
 
-    const metafilePath = `${publicDirectory}metafile.json`;
+    const metafilePath = `${publicBuildDirectory}metafile.json`;
     const bufferChangedFiles = (path) => {
       if (!path.endsWith('.map') && path !== metafilePath) {
         buffer.push({ event: 'change', path });
@@ -206,6 +207,7 @@ if (watch) {
       return `${publicURLPath}/${suffix}`;
     };
     const fileToStableUrl = (pathAbsolute) => {
+      console.log('fileToStableUrl', pathAbsolute);
       const url = fileToUrl(pathAbsolute);
       return {
         stableUrl: url.replace(hashedURLReplaceRegex, '$1'),
