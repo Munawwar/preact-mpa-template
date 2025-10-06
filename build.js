@@ -66,7 +66,10 @@ const commonConfig = {
   },
   resolveExtensions: ['.jsx', '.ts', '.tsx'],
   jsxImportSource: 'preact',
-  jsx: 'automatic'
+  jsx: 'automatic',
+  define: {
+    __DEV__: JSON.stringify(isDevMode)
+  }
 };
 
 // Why 2 builds?
@@ -192,7 +195,7 @@ if (watch) {
       });
     });
 
-    const metafilePath = `${publicBuildDirectory}metafile.json`;
+    const metafilePath = `${publicBuildDirectory}/metafile.json`;
     const bufferChangedFiles = (path) => {
       if (!path.endsWith('.map') && path !== metafilePath) {
         buffer.push({ event: 'change', path });
@@ -204,10 +207,9 @@ if (watch) {
     const fileToUrl = (pathAbsolute) => {
       const fileURI = pathToFileURL(pathAbsolute).href;
       const suffix = fileURI.slice(publicDirectoryFileURI.length);
-      return `${publicURLPath}/${suffix}`;
+      return `${publicURLPath}/${suffix.replace(/^\//, '')}`;
     };
     const fileToStableUrl = (pathAbsolute) => {
-      console.log('fileToStableUrl', pathAbsolute);
       const url = fileToUrl(pathAbsolute);
       return {
         stableUrl: url.replace(hashedURLReplaceRegex, '$1'),
@@ -305,28 +307,56 @@ if (watch) {
         }
       });
 
-      // Any non-CSS file change should trigger a browser reload
+      // Separate CSS and JS changes
       const remove = Object.values(changes.remove);
-      const replace = Object.values(changes.replace);
-      const reload = [
-        ...remove,
-        ...Object.keys(changes.replace)
-      ].some((url) => !url.endsWith('.css'));
-      if (reload) {
+
+      // Categorize changes by type
+      const cssRemove = remove.filter(url => url.endsWith('.css'));
+      const cssReplace = Object.entries(changes.replace).filter(([stableUrl]) => stableUrl.endsWith('.css'));
+      const jsRemove = remove.filter(url => url.endsWith('.js'));
+      const jsReplace = Object.entries(changes.replace).filter(([stableUrl]) => stableUrl.endsWith('.js'));
+      const otherChanges = remove.some(url => !url.endsWith('.css') && !url.endsWith('.js')) ||
+                          Object.keys(changes.replace).some(url => !url.endsWith('.css') && !url.endsWith('.js'));
+
+      // For non-CSS/JS files (like images, SVG), do a full reload
+      if (otherChanges) {
         sendBrowserReload();
-        // Adds don't need to be sent to the client, until a JS file change is made (which causes a page reload)
-      } else if (remove.length || replace.length) {
+        return;
+      }
+
+      // Send CSS changes
+      if (cssRemove.length || cssReplace.length) {
         console.debug('Send CSS reload event to browser');
         wss.clients.forEach(client => {
           client.send(JSON.stringify({
             type: 'css',
             operations: {
-              remove,
-              replace
+              remove: cssRemove,
+              replace: cssReplace.map(([, value]) => value)
             }
           }));
         });
       }
+
+      // Send JS changes
+      if (jsRemove.length || jsReplace.length) {
+        console.debug('Send JS reload event to browser');
+        wss.clients.forEach(client => {
+          client.send(JSON.stringify({
+            type: 'js',
+            operations: {
+              remove: jsRemove,
+              replace: jsReplace.map(([, value]) => value)
+            }
+          }));
+        });
+      }
+
+      // Note: We don't need to handle 'changes.add' here.
+      // New files (adds) are inert until referenced by some code. When a file is added,
+      // it's always accompanied by a replace event for the JS/CSS that references it.
+      // Since events are batched together, the replace events above will handle the reload.
+      // Pure adds (with no replaces) don't affect running code and can be safely ignored.
     };
 
     chokidar
