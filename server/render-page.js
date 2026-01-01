@@ -11,13 +11,13 @@ let manifestCache = null;
 let templateCache = null;
 
 /**
- * Collect CSS URLs from Vite's module graph in dev mode
+ * Collect and transform CSS from Vite's module graph in dev mode
  * @param {Object} viteDevServer - Vite dev server instance
  * @param {string} entryUrl - Entry point URL (e.g., '/client/pages/home/home.page.jsx')
- * @returns {Promise<string[]>} Array of CSS URLs
+ * @returns {Promise<Array<{url: string, content?: string, isModule: boolean}>>}
  */
 async function collectDevCSS(viteDevServer, entryUrl) {
-  const cssUrls = [];
+  const cssFiles = [];
   const visited = new Set();
 
   async function traverse(url) {
@@ -28,7 +28,31 @@ async function collectDevCSS(viteDevServer, entryUrl) {
     if (!mod) return;
 
     if (mod.url && mod.url.endsWith('.css')) {
-      cssUrls.push(mod.url);
+      const isModule = mod.url.includes('.module.');
+
+      if (isModule) {
+        // CSS module: transform to get scoped CSS
+        try {
+          const result = await viteDevServer.transformRequest(mod.url);
+          if (result && result.code) {
+            // Extract CSS from Vite's wrapped JS code
+            // Vite 7 pattern: const __vite__css = "..."
+            const cssMatch = result.code.match(/const __vite__css = "([^"]*)"/);
+            if (cssMatch) {
+              const cssContent = cssMatch[1]
+                .replace(/\\n/g, '\n')
+                .replace(/\\"/g, '"')
+                .replace(/\\'/g, "'");
+              cssFiles.push({ url: mod.url, content: cssContent, isModule: true });
+            }
+          }
+        } catch (err) {
+          console.warn(`Failed to transform CSS module ${mod.url}:`, err);
+        }
+      } else {
+        // Regular CSS: use link tag
+        cssFiles.push({ url: mod.url, isModule: false });
+      }
     }
 
     if (mod.importedModules) {
@@ -41,28 +65,39 @@ async function collectDevCSS(viteDevServer, entryUrl) {
   }
 
   await traverse(entryUrl);
-  return cssUrls;
+  return cssFiles;
 }
 
 /**
- * Generate cleanup script that removes temporary CSS link tags
+ * Generate cleanup script that removes temporary CSS elements
  * after Vite's HMR has injected the corresponding style tags
  */
 function getDevCSSCleanupScript() {
   return `<script data-temp-css-cleanup>
-// Development only script: To cleanup temporary CSS link tags after Vite's HMR has injected the corresponding style tags
+// Development only: Remove temporary CSS after Vite HMR injects real styles
 (function() {
   var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
       mutation.addedNodes.forEach(function(node) {
         if (node.nodeName === 'STYLE' && node.dataset.viteDevId) {
+          // Remove matching temporary link tags (regular CSS)
           var links = document.querySelectorAll('link[data-temp-css]');
           links.forEach(function(link) {
             if (node.dataset.viteDevId.endsWith(link.getAttribute('href'))) {
               link.remove();
             }
           });
-          if (!document.querySelector('link[data-temp-css]')) {
+
+          // Remove matching temporary style tags (CSS modules)
+          var styles = document.querySelectorAll('style[data-temp-css]');
+          styles.forEach(function(style) {
+            if (style.dataset.viteDevId === node.dataset.viteDevId) {
+              style.remove();
+            }
+          });
+
+          // Self-cleanup when all temp elements are gone
+          if (!document.querySelector('[data-temp-css]')) {
             observer.disconnect();
             var script = document.querySelector('script[data-temp-css-cleanup]');
             if (script) script.remove();
@@ -208,17 +243,23 @@ export async function renderPage({
       const scriptTag = `<script type="module" src="/client/pages/${pageName}/${pageName}.page.jsx"></script>`;
       html = html.replace('<!--app-script-->', scriptTag);
 
-      // Transform entry to populate module graph, then collect CSS URLs
+      // Transform entry to populate module graph, then collect CSS
       const entryUrl = `/client/pages/${pageName}/${pageName}.page.jsx`;
       await viteDevServer.transformRequest(entryUrl);
-      const cssUrls = await collectDevCSS(viteDevServer, entryUrl);
+      const cssFiles = await collectDevCSS(viteDevServer, entryUrl);
 
-      // Inject temporary CSS link tags (removed after Vite injects style tags)
-      if (cssUrls.length > 0) {
-        const cssLinkTags = cssUrls.map(url =>
-          `<link rel="stylesheet" href="${url}" data-temp-css>`
-        ).join('\n    ');
-        coreHeadTags.unshift(cssLinkTags);
+      // Inject temporary CSS (removed after Vite injects style tags)
+      if (cssFiles.length > 0) {
+        const cssTags = cssFiles.map(({ url, content, isModule }) => {
+          if (isModule) {
+            // CSS module: inject transformed CSS inline
+            return `<style type="text/css" data-vite-dev-id="${url}" data-temp-css>\n${content}\n</style>`;
+          }
+          // Regular CSS: inject as link tag
+          return `<link rel="stylesheet" href="${url}" data-temp-css>`;
+        }).join('\n    ');
+
+        coreHeadTags.unshift(cssTags);
         coreHeadTags.unshift(getDevCSSCleanupScript());
       }
 
