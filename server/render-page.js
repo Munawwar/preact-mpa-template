@@ -11,6 +11,72 @@ let manifestCache = null;
 let templateCache = null;
 
 /**
+ * Collect CSS URLs from Vite's module graph in dev mode
+ * @param {Object} viteDevServer - Vite dev server instance
+ * @param {string} entryUrl - Entry point URL (e.g., '/client/pages/home/home.page.jsx')
+ * @returns {Promise<string[]>} Array of CSS URLs
+ */
+async function collectDevCSS(viteDevServer, entryUrl) {
+  const cssUrls = [];
+  const visited = new Set();
+
+  async function traverse(url) {
+    if (visited.has(url)) return;
+    visited.add(url);
+
+    const mod = await viteDevServer.moduleGraph.getModuleByUrl(url);
+    if (!mod) return;
+
+    if (mod.url && mod.url.endsWith('.css')) {
+      cssUrls.push(mod.url);
+    }
+
+    if (mod.importedModules) {
+      for (const imported of mod.importedModules) {
+        if (imported.url) {
+          await traverse(imported.url);
+        }
+      }
+    }
+  }
+
+  await traverse(entryUrl);
+  return cssUrls;
+}
+
+/**
+ * Generate cleanup script that removes temporary CSS link tags
+ * after Vite's HMR has injected the corresponding style tags
+ */
+function getDevCSSCleanupScript() {
+  return `<script data-temp-css-cleanup>
+// Development only script: To cleanup temporary CSS link tags after Vite's HMR has injected the corresponding style tags
+(function() {
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      mutation.addedNodes.forEach(function(node) {
+        if (node.nodeName === 'STYLE' && node.dataset.viteDevId) {
+          var links = document.querySelectorAll('link[data-temp-css]');
+          links.forEach(function(link) {
+            if (node.dataset.viteDevId.endsWith(link.getAttribute('href'))) {
+              link.remove();
+            }
+          });
+          if (!document.querySelector('link[data-temp-css]')) {
+            observer.disconnect();
+            var script = document.querySelector('script[data-temp-css-cleanup]');
+            if (script) script.remove();
+          }
+        }
+      });
+    });
+  });
+  observer.observe(document.head, { childList: true });
+})();
+</script>`;
+}
+
+/**
  * Render a page with SSR and inject dynamic content
  * @param {Object} options - Rendering options
  * @param {string} options.pageName - Name of the page (e.g., 'home', 'about')
@@ -135,12 +201,26 @@ export async function renderPage({
       const scriptTag = `<script type="module" crossorigin src="${publicURLPath}/${entry.file}"></script>`;
       html = html.replace('<!--app-script-->', scriptTag);
     } else {
-      // Development: Inject page script and let Vite transform
+      // Development: Inject page script and collect CSS to prevent FOUC
       const { getDevServer } = await import('./vite-dev-server.js');
       const viteDevServer = getDevServer();
 
       const scriptTag = `<script type="module" src="/client/pages/${pageName}/${pageName}.page.jsx"></script>`;
       html = html.replace('<!--app-script-->', scriptTag);
+
+      // Transform entry to populate module graph, then collect CSS URLs
+      const entryUrl = `/client/pages/${pageName}/${pageName}.page.jsx`;
+      await viteDevServer.transformRequest(entryUrl);
+      const cssUrls = await collectDevCSS(viteDevServer, entryUrl);
+
+      // Inject temporary CSS link tags (removed after Vite injects style tags)
+      if (cssUrls.length > 0) {
+        const cssLinkTags = cssUrls.map(url =>
+          `<link rel="stylesheet" href="${url}" data-temp-css>`
+        ).join('\n    ');
+        coreHeadTags.unshift(cssLinkTags);
+        coreHeadTags.unshift(getDevCSSCleanupScript());
+      }
 
       // Let Vite transform the HTML (handles HMR, etc.)
       html = await viteDevServer.transformIndexHtml(urlPathname, html);
