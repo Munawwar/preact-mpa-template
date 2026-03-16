@@ -69,7 +69,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         ssr: true,
         outDir: 'dist/server',
         emptyOutDir: true,
-        rollupOptions: {
+        rolldownOptions: {
           input: findPageEntries(),
           output: {
             entryFileNames: '[name].js',
@@ -97,7 +97,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       outDir: 'dist/client',
       emptyOutDir: true,
       manifest: true,
-      rollupOptions: {
+      rolldownOptions: {
         input: findPageEntries(),
         output: {
           entryFileNames: 'assets/[name]-[hash].js',

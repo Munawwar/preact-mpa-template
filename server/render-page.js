@@ -36,8 +36,9 @@ async function collectDevCSS(viteDevServer, entryUrl) {
           const result = await viteDevServer.transformRequest(mod.url);
           if (result && result.code) {
             // Extract CSS from Vite's wrapped JS code
-            // Vite 7 pattern: const __vite__css = "..."
-            const cssMatch = result.code.match(/const __vite__css = "([^"]*)"/);
+            // Vite 7: const __vite__css = "..."
+            // Vite 8/Oxc: var __vite__css = "..."
+            const cssMatch = result.code.match(/(?:const|var|let)\s+__vite__css\s*=\s*"([^"]*)"/);
             if (cssMatch) {
               const cssContent = cssMatch[1]
                 .replace(/\\n/g, '\n')
