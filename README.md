@@ -1,6 +1,6 @@
 # preact-mpa-template
 
-Example repo to start a multi-page app/website (MPA) with Preact, fastify and esbuild. If you don't need server side rendering (SSR) check [preact-spa-template](https://github.com/Munawwar/preact-spa-template).
+Example repo to start a multi-page app/website (MPA) with Preact, fastify and esbuild ([vite version here](https://github.com/Munawwar/preact-mpa-template/tree/vite)). If you don't need server side rendering (SSR) check [preact-spa-template](https://github.com/Munawwar/preact-spa-template).
 
 - <span aria-hidden>🐢</span> JS, CSS, image files are content hashed ("fingerprinted") on prod for long lived caching
 - <span aria-hidden>🤵‍♂️</span> Fastify server (More performant than Express, can add HTTP/2 support)
