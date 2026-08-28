@@ -7,7 +7,7 @@ Example repo to start a multi-page app/website (MPA) with Preact, fastify and es
 - <span aria-hidden>🔄</span> Live reload¹
 - <span aria-hidden>✂️</span> Shared code chunks / Code splitting (read esbuild docs for caveats)
 - <span aria-hidden>🚀</span> Preload shared chunks
-- <span aria-hidden>🗲</span> Preloads pages on mouse hover / touch start (using [instant.page](https://instant.page/)²)
+- <span aria-hidden>⚡</span> Preloads pages on mouse hover / touch start (using [instant.page](https://instant.page/)²)
 - <span aria-hidden>🌐</span> Static files deployable to S3 behind a CDN
 
 ```sh
